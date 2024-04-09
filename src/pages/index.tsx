@@ -1,4 +1,4 @@
-import abi from '@/abi/ContractAbi.json'
+import abi from '../abi/Contract.sol/Contract.abi.json'
 import { ConnectKitButton } from 'connectkit'
 import { IDKitWidget, ISuccessResult, useIDKit } from '@worldcoin/idkit'
 import { useAccount, useWriteContract, useWaitForTransactionReceipt, type BaseError } from 'wagmi'
