@@ -50,7 +50,7 @@
   },
   {
     "type": "event",
-    "name": "verified",
+    "name": "Verified",
     "inputs": [
       {
         "name": "nullifierHash",

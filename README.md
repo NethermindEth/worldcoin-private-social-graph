@@ -23,11 +23,10 @@ In another shell, deploy the contract, replacing `$WORLD_ID_ROUTER` with the [Wo
 
 ```bash
 cd contracts
-cd contracts
 forge build -C src/ --extra-output-files abi -o ../src/abi/
 
 forge create --rpc-url http://localhost:8545 --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 src/Contract.sol:Contract --constructor-args 0x11cA3127182f7583EfC416a8771BD4d11Fae4334 app_staging_550bc85869f87959046d7eeb3f86994d sign-up
-# 0xcf23CE2ffa1DDd9Cc2b445aE6778c4DBD605a1A0 - used in .env
+# 0x8729c0238b265BaCF6fE397E8309897BB5c40473 - used in .env
 ```
 
 Note the `Deployed to:` address from the output.
