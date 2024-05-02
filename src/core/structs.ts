@@ -9,7 +9,7 @@ export class Coin {
     public cm: bigint
 
     constructor(
-        addresses: Addresses,
+        addresses: Addresses, // TODO: address should correspond to ECDSA
         value: bigint, // value should always be 1 in the case of 
         seed: bigint,
         r: bigint,
@@ -71,6 +71,7 @@ export class Coin {
     }
 }
 
+// TODO: CHANGE THIS TO HOLD ONLY ONE ECDSA ADDRESS
 export class Addresses {
     public key: Address
     public enc_key: bigint

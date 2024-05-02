@@ -3,7 +3,9 @@ import { poseidon2 } from "poseidon-lite";
 import { Addresses, Coin } from "./structs";
 
 
-export function createAddress() {}
+export function createAddress() {
+    // TODO: should generate an ECDSA private and public key
+}
 
 export function mint(pk: Address, pk_enc: bigint) {
     // sample nullifier seed
@@ -25,9 +27,5 @@ export function mint(pk: Address, pk_enc: bigint) {
 }
 
 export function verifyMint(cm: bigint, v: bigint, k: bigint) {
-    if (cm == poseidon2([v, k])) {
-        return true;
-    } else {
-        return false;
-    }
+    return (cm == poseidon2([v, k]));
 }

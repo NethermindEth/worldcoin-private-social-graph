@@ -1,3 +1,5 @@
+// based on Semaphore: https://github.com/semaphore-protocol/semaphore/blob/main/packages/group/src/index.ts
+
 import { IMT, IMTMerkleProof, IMTNode } from "@zk-kit/imt"
 import { poseidon2 } from "poseidon-lite/poseidon2"
 

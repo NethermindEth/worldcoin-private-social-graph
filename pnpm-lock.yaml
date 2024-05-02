@@ -32,6 +32,9 @@ importers:
       '@zk-kit/imt':
         specifier: 2.0.0-beta.4
         version: 2.0.0-beta.4
+      '@zk-kit/imt.sol':
+        specifier: 2.0.0-beta.12
+        version: 2.0.0-beta.12
       autoprefixer:
         specifier: 10.4.14
         version: 10.4.14(postcss@8.4.23)
@@ -1899,6 +1902,9 @@ packages:
 
   '@xobotyi/scrollbar-width@1.9.5':
     resolution: {integrity: sha512-N8tkAACJx2ww8vFMneJmaAgmjAG1tnVBZJRLRcx061tmsLRZHSEZSLuGWnwPtunsSLvSqXQ2wfp7Mgqg1I+2dQ==}
+
+  '@zk-kit/imt.sol@2.0.0-beta.12':
+    resolution: {integrity: sha512-kKgopVO6zlfSiQgv3X9WykaCeyb8jGtthWGqdo1ZD7fY1bH8A7BWhhWxtoCuU5mPEgRbamw1cAoUynuLoEULsg==}
 
   '@zk-kit/imt@2.0.0-beta.4':
     resolution: {integrity: sha512-JIPH8s/cjxDqfkKIZK7JFtynxU2CDSdIrrVb4/QHqO1a4pELLuaGdpRvLvQPgvNpUg9yP3DaFXwicWxBSXkA1A==}
@@ -4146,6 +4152,9 @@ packages:
 
   poseidon-lite@0.2.0:
     resolution: {integrity: sha512-vivDZnGmz8W4G/GzVA72PXkfYStjilu83rjjUfpL4PueKcC8nfX6hCPh2XhoC5FBgC6y0TA3YuUeUo5YCcNoig==}
+
+  poseidon-solidity@0.0.5:
+    resolution: {integrity: sha512-NzrvSwHzvZgT4hvg2GyGqeR+UOU/eLSEt4wAoXEua+VaR7NTKKwx1X9bPlh1VMBEVEno+IWvkRBbidFGzTeAqQ==}
 
   possible-typed-array-names@1.0.0:
     resolution: {integrity: sha512-d7Uw+eZoloe0EHDIYoe+bQ5WXnGMOpmiZFTuMWCwpjzzkL2nTjcKiAk4hh8TjnGye2TwWOk3UXucZ+3rbmBa8Q==}
@@ -7999,6 +8008,10 @@ snapshots:
 
   '@xobotyi/scrollbar-width@1.9.5': {}
 
+  '@zk-kit/imt.sol@2.0.0-beta.12':
+    dependencies:
+      poseidon-solidity: 0.0.5
+
   '@zk-kit/imt@2.0.0-beta.4': {}
 
   abitype@0.9.8(typescript@5.0.4)(zod@3.21.4):
@@ -10642,6 +10655,8 @@ snapshots:
       tslib: 2.6.2
 
   poseidon-lite@0.2.0: {}
+
+  poseidon-solidity@0.0.5: {}
 
   possible-typed-array-names@1.0.0: {}
 

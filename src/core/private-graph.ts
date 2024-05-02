@@ -14,11 +14,12 @@ class private_graph {
         return createAddress()
     }
 
-    public registerWorldID(pk_address: Address, pk_enc: bigint) {
+    public registerWorldID(pk_addresses: Addresses) {
         // generate mint tx
-        const tx_mint = mint(pk_address, pk_enc)
+        const tx_mint = mint(pk_addresses.key, pk_addresses.enc_key)
         // get values from mint tx
         const cm = tx_mint[0]
+        const k = tx_mint[1]
         const coin = tx_mint[2]
         
         const pos = this.voting_tree.addMember(cm)
