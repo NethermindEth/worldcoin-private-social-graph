@@ -1,13 +1,11 @@
 import { Address } from "viem";
 import { poseidon2 } from "poseidon-lite";
-import { Addresses, Coin } from "./structs";
+import { ECDSA_address, Coin, Mint } from "./structs";
 
+var EC = require('elliptic').ec;
+var ec = new EC('secp256k1');
 
-export function createAddress() {
-    // TODO: should generate an ECDSA private and public key
-}
-
-export function mint(pk: Address, pk_enc: bigint) {
+export function mint(pk: string, value: bigint) : Mint {
     // sample nullifier seed
     const seed = BigInt(Math.random() * 2**256)
     // sample trapdoors
@@ -15,17 +13,17 @@ export function mint(pk: Address, pk_enc: bigint) {
     const s = BigInt(Math.random() * 2**256)
     
     const k = poseidon2([r, poseidon2([pk, seed])])
-    const cm = poseidon2([1, k])
-
-    const addresses = new Addresses(pk, pk_enc)
+    const cm = poseidon2([value, k])
 
     const coin = new Coin(
-        addresses, BigInt(1), seed, r, s, cm
+        pk, BigInt(1), seed, r, s, cm
     )
 
-    return [cm, k, coin];
+    const tx_mint: bigint[] = [cm, BigInt(1), k, s]
+
+    return new Mint(coin, tx_mint);
 }
 
-export function verifyMint(cm: bigint, v: bigint, k: bigint) {
+export function verifyMint(cm: bigint, v: bigint, k: bigint) : boolean {
     return (cm == poseidon2([v, k]));
 }

@@ -14,6 +14,9 @@ importers:
       '@tanstack/react-query':
         specifier: ^5.28.6
         version: 5.28.6(react@18.2.0)
+      '@types/elliptic':
+        specifier: ^6.4.18
+        version: 6.4.18
       '@types/node':
         specifier: 20.1.2
         version: 20.1.2
@@ -41,6 +44,9 @@ importers:
       connectkit:
         specifier: ^1.7.2
         version: 1.7.2(@babel/core@7.24.3)(@tanstack/react-query@5.28.6(react@18.2.0))(react-dom@18.2.0(react@18.2.0))(react-is@18.2.0)(react@18.2.0)(viem@2.8.16(bufferutil@4.0.8)(typescript@5.0.4)(utf-8-validate@6.0.3)(zod@3.21.4))(wagmi@2.5.11(@react-native-async-storage/async-storage@1.23.1(react-native@0.73.6(@babel/core@7.24.3)(@babel/preset-env@7.24.3(@babel/core@7.24.3))(bufferutil@4.0.8)(react@18.2.0)(utf-8-validate@6.0.3)))(@tanstack/query-core@5.28.6)(@tanstack/react-query@5.28.6(react@18.2.0))(@types/react@18.2.6)(bufferutil@4.0.8)(react-dom@18.2.0(react@18.2.0))(react-native@0.73.6(@babel/core@7.24.3)(@babel/preset-env@7.24.3(@babel/core@7.24.3))(bufferutil@4.0.8)(react@18.2.0)(utf-8-validate@6.0.3))(react@18.2.0)(typescript@5.0.4)(utf-8-validate@6.0.3)(viem@2.8.16(bufferutil@4.0.8)(typescript@5.0.4)(utf-8-validate@6.0.3)(zod@3.21.4))(zod@3.21.4))
+      elliptic:
+        specifier: ^6.5.5
+        version: 6.5.5
       eslint:
         specifier: 8.40.0
         version: 8.40.0
@@ -1684,6 +1690,9 @@ packages:
   '@tanstack/virtual-core@3.2.0':
     resolution: {integrity: sha512-P5XgYoAw/vfW65byBbJQCw+cagdXDT/qH6wmABiLt4v4YBT2q2vqCOhihe+D1Nt325F/S/0Tkv6C5z0Lv+VBQQ==}
 
+  '@types/bn.js@5.1.5':
+    resolution: {integrity: sha512-V46N0zwKRF5Q00AZ6hWtN0T8gGmDUaUzLWQvHFo5yThtVwK/VCenFY3wXVbOvNfajEpsTfQM4IN9k/d6gUVX3A==}
+
   '@types/chrome@0.0.136':
     resolution: {integrity: sha512-XDEiRhLkMd+SB7Iw3ZUIj/fov3wLd4HyTdLltVszkgl1dBfc3Rb7oPMVZ2Mz2TLqnF7Ow+StbR8E7r9lqpb4DA==}
 
@@ -1692,6 +1701,9 @@ packages:
 
   '@types/dom-screen-wake-lock@1.0.3':
     resolution: {integrity: sha512-3Iten7X3Zgwvk6kh6/NRdwN7WbZ760YgFCsF5AxDifltUQzW1RaW+WRmcVtgwFzLjaNu64H+0MPJ13yRa8g3Dw==}
+
+  '@types/elliptic@6.4.18':
+    resolution: {integrity: sha512-UseG6H5vjRiNpQvrhy4VF/JXdA3V/Fp5amvveaL+fs28BZ6xIKJBPnUPRlEaZpysD9MbpfaLi8lbl7PGUAkpWw==}
 
   '@types/filesystem@0.0.35':
     resolution: {integrity: sha512-1eKvCaIBdrD2mmMgy5dwh564rVvfEhZTWVQQGRNn0Nt4ZEnJ0C8oSUCzvMKRA4lGde5oEVo+q2MrTTbV/GHDCQ==}
@@ -7480,6 +7492,10 @@ snapshots:
 
   '@tanstack/virtual-core@3.2.0': {}
 
+  '@types/bn.js@5.1.5':
+    dependencies:
+      '@types/node': 20.1.2
+
   '@types/chrome@0.0.136':
     dependencies:
       '@types/filesystem': 0.0.35
@@ -7490,6 +7506,10 @@ snapshots:
       '@types/ms': 0.7.34
 
   '@types/dom-screen-wake-lock@1.0.3': {}
+
+  '@types/elliptic@6.4.18':
+    dependencies:
+      '@types/bn.js': 5.1.5
 
   '@types/filesystem@0.0.35':
     dependencies:
