@@ -3,16 +3,16 @@ const EC = new ec('secp256k1')
 import { Tree } from "./tree"
 
 export class Coin {
-    public public_key: any
-    public value: bigint
-    public seed: bigint
-    public r: bigint
-    public s: bigint
-    public cm: bigint
+    public public_key: bigint // address pk
+    public value: bigint // coin value
+    public seed: bigint // nullifier/serial number seed
+    public r: bigint // trapdoor
+    public s: bigint // trapdoor
+    public cm: bigint // final commitment of value and k
 
     constructor(
         public_key: any,
-        value: bigint, // value should always be 1 in the case of 
+        value: bigint, 
         seed: bigint,
         r: bigint,
         s: bigint,
@@ -73,6 +73,7 @@ export class Coin {
     }
 }
 
+// Used to sign the pour message
 export class ECDSA_address {
     public key_pair: ec.KeyPair
 
@@ -91,14 +92,6 @@ export class ECDSA_address {
 
     public get_pub() {
         return this.key_pair.getPublic().toString()
-    }
-
-    public get_pub_X() {
-        return this.key_pair.getPublic().getX()
-    }
-
-    public get_pub_Y() {
-        return this.key_pair.getPublic().getY()
     }
 
     // setters
@@ -121,6 +114,17 @@ export class ECDSA_address {
         sig: SignatureInput,
     ) {
         return this.key_pair.verify(msg, sig)
+    }
+}
+
+// represents the user in the zcash way
+export class Address {
+    public sk: bigint
+    public pk: bigint
+
+    constructor(sk: bigint, pk: bigint) {
+        this.sk = sk
+        this.pk = pk
     }
 }
 
@@ -183,15 +187,15 @@ export class Mint {
 }
 
 export class Tx_Pour {
-    public rt: bigint
-    public sn_old: bigint
-    public new_cm: bigint
-    public weight: bigint
-    public info: string
-    public key: string
-    public h: bigint
-    public proof: any[]
-    public signature: ec.Signature
+    public rt: bigint // merkle root when generating pour
+    public sn_old: bigint // serial number of coin being poured from
+    public new_cm: bigint // commitment of new coin
+    public weight: bigint // weight of vote for candidate
+    public info: string // arbitrary string
+    public key: string // signature public key
+    public h: bigint // hash of signature pk
+    public proof: any[] // noir proof
+    public signature: ec.Signature // signature of public instances, proof and info
 
     constructor (
         rt: bigint,

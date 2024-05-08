@@ -1,11 +1,7 @@
-import { Address } from "viem";
 import { poseidon2 } from "poseidon-lite";
-import { ECDSA_address, Coin, Mint } from "./structs";
+import { Coin, Mint } from "./structs";
 
-var EC = require('elliptic').ec;
-var ec = new EC('secp256k1');
-
-export function mint(pk: string, value: bigint) : Mint {
+export function mint(pk: bigint, value: bigint) : Mint {
     // sample nullifier seed
     const seed = BigInt(Math.random() * 2**256)
     // sample trapdoors

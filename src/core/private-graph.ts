@@ -1,7 +1,8 @@
 import { mint, verifyMint } from "./mint";
 import { Tree } from "./tree";
-import { Coin, ECDSA_address, Candidate, Mint } from "./structs";
-import { pour } from "./pour";
+import { Coin, Candidate, Mint, Address, Pour } from "./structs";
+import { pour, verifyPour } from "./pour";
+import { poseidon2 } from "poseidon-lite";
 
 export class private_graph {
     private voting_tree: Tree
@@ -14,8 +15,10 @@ export class private_graph {
         this.vote_nullifiers = []
     }
 
-    public genAddress() {
-        return new ECDSA_address()
+    public create_address() : Address {
+        const sk = BigInt(Math.random() * 2**256)
+        const pk = poseidon2([sk, 0])
+        return new Address(sk, pk)
     }
 
     public registerCandidate(name: string, epochV: number) {
@@ -23,7 +26,7 @@ export class private_graph {
     }
 
     // Mint new coin and add coin commitment in voting tree
-    public registerWorldID(pk: string) {
+    public registerWorldID(pk: bigint) {
         // generate mint tx
         const m = mint(pk, BigInt(1))
         // get values from mint tx
@@ -41,19 +44,26 @@ export class private_graph {
     }
 
     // consume old coin to 
-    public vote(old_coin: Coin, old_address: ECDSA_address, new__pk_address: string, userID: number, weight: bigint) {
+    public async vote(old_coin: Coin, old_address: Address, new_pk_address: bigint, userID: number, weight: bigint) {
+        if (weight < 0) {
+            throw new Error("weight must be non-negative")
+        }
         // generate pour transaction
-        const Pour = pour(
+        const Pour = await pour(
             this.voting_tree,
             this.voting_tree.root,
             old_coin,
             old_address,
             this.voting_tree.generateMerkleProof(this.voting_tree.indexOf(old_coin.getCoinCm())),
             old_coin.value - weight,
-            new__pk_address,
+            new_pk_address,
             weight,
             "info"
         )
+
+        if(!verifyPour(this.voting_tree, Pour, this.vote_nullifiers)){
+            throw new Error("Pour transaction is invalid")
+        }
 
         // check v_in does not exceed threshold
         if (this.candidates[userID].v_in + weight <= 10) {
@@ -66,7 +76,7 @@ export class private_graph {
         const voting_pos = this.voting_tree.addMember(Pour.tx_pour.new_cm)
 
         // mint coin in userID tree
-        const m: Mint = mint(old_address.get_pub(), weight)
+        const m: Mint = mint(old_address.pk, weight)
         const cm = m.tx_mint[0]
         const userID_pos = this.candidates[userID].candidateTree.addMember(cm)
 
