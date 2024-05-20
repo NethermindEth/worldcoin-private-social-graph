@@ -17,12 +17,12 @@ describe("Poseidon tests", () => {
         
     })
     // TODO: fix circuit error
-    // it("Noir: Should return the correct hash", () => {
-    //     const x = "10"
-    //     const hash = hash2([x,x])
-    //     // DOES NOT PASS
-    //     expect(hash).toBe("2056449770998421094693270621231289260402432781619773239530425938274273592166")
-    // })
+    it("Noir: Should return the correct hash", () => {
+        const x = "10"
+        const hash = hash2([x,x])
+        // DOES NOT PASS
+        expect(hash).toBe("2056449770998421094693270621231289260402432781619773239530425938274273592166")
+    })
     // TODO: test solidity poseidon hash
 
     // TODO: test all three hashes with a random number to ensure correctness

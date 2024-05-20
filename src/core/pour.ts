@@ -2,7 +2,7 @@ import { poseidon1, poseidon2, poseidon4 } from "poseidon-lite";
 import { ECDSA_address, Coin, Tx_Pour, Pour, Address } from "./structs";
 import { Tree } from "./tree";
 import { IMTMerkleProof } from "@zk-kit/imt"
-import { BN, ec } from "elliptic"
+import { ec } from "elliptic"
 const EC = new ec('secp256k1')
 
 /**
@@ -89,7 +89,7 @@ export function pour(
     let msg: any = [pour_instance, proof, info]
     let signature = sig_key_pair.sign(msg)
     if(!sig_key_pair.verify(msg, signature)) {
-        throw new Error("poop")
+        throw new Error("Signature did not verify")
     }
 
     // restrict the signature to only accept low S values- sigs are of the form (r,S) according to BIP 62: https://github.com/bitcoin/bips/blob/master/bip-0062.mediawiki#low-s-values-in-signatures
@@ -126,8 +126,6 @@ export function pour(
             coin_2: coin_2, 
             tx_pour: tx_pour,
         }
-
-        console.log(changed)
 
         return new_pour
     }
