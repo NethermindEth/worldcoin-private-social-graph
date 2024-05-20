@@ -7,7 +7,7 @@ import { Contract } from "./Contract.sol";
 contract SocialGraph {
     uint depth = 64;
     uint internal id = 1;
-    uint internal x;
+    uint internal x = 600;
     struct User{
         uint uid;
         string name;
@@ -29,10 +29,12 @@ contract SocialGraph {
     mapping (uint => Rewards) rewards_per_epoch;
     
     mapping(address => Tree) candidateTrees;
+    mapping(address => bool) candidateTreeNonEmpty;
     Tree VotingTree;
     Tree RewardsTree;
 
     mapping(address => uint256[]) userIDNullifiers;
+    mapping(address => uint) sizeOfUserIDNullifiers;
     uint256[] voteNullifiers;
     mapping(uint256 => bool) public voteNullifiersExists;
     uint256[] rewardsNullifiers;
@@ -58,7 +60,8 @@ contract SocialGraph {
     struct Pour {
         uint256 rt;
         uint256 sn_old;
-        uint256 cm_new;
+        uint256 cm_1;
+        uint256 cm_2;
         uint256 v_pub;
         string info;
         uint256 pk_sig;
