@@ -2,75 +2,13 @@ import { BNInput, ec, SignatureInput } from "elliptic"
 const EC = new ec('secp256k1')
 import { Tree } from "./tree"
 
-export class Coin {
-    public public_key: bigint // address pk
-    public value: bigint // coin value
-    public seed: bigint // nullifier/serial number seed
-    public r: bigint // trapdoor
-    public s: bigint // trapdoor
-    public cm: bigint // final commitment of value and k
-
-    constructor(
-        public_key: any,
-        value: bigint, 
-        seed: bigint,
-        r: bigint,
-        s: bigint,
-        cm: bigint,
-    ) {
-        this.public_key = public_key
-        this.value = value
-        this.seed = seed
-        this.r = r
-        this.s = s
-        this.cm = cm
-    }
-
-    // getters
-    public getCoinPk() {
-        return this.public_key
-    }
-
-    public getCoinValue() {
-        return this.value
-    }
-
-    public getCoinSeed() {
-        return this.seed
-    }
-
-    public getCoinR() {
-        return this.r
-    }
-
-    public getCoinS() {
-        return this.s
-    }
-
-    public getCoinCm() {
-        return this.cm
-    }
-
-    // setters
-    public setCoinValue(value: bigint) {
-        this.value = value
-    }
-
-    public setCoinSeed(seed: bigint) {
-        this.seed = seed
-    }
-
-    public setCoinR(r: bigint) {
-        this.r = r
-    }
-
-    public setCoinS(s: bigint) {
-        this.s = s
-    }
-
-    public setCoinCm(cm: bigint) {
-        this.cm = cm
-    }
+export type Coin = {
+    public_key: bigint // address pk
+    value: number // coin value
+    seed: bigint // nullifier/serial number seed
+    r: bigint // trapdoor
+    s: bigint // trapdoor
+    cm: bigint // final commitment of value and k
 }
 
 // Used to sign the pour message
@@ -91,7 +29,7 @@ export class ECDSA_address {
     }
 
     public get_pub() {
-        return this.key_pair.getPublic().toString()
+        return "0x" + this.key_pair.getPublic().encode('hex', true).toString()
     }
 
     // setters
@@ -118,14 +56,9 @@ export class ECDSA_address {
 }
 
 // represents the user in the zcash way
-export class Address {
-    public sk: bigint
-    public pk: bigint
-
-    constructor(sk: bigint, pk: bigint) {
-        this.sk = sk
-        this.pk = pk
-    }
+export type Address = {
+    sk: bigint
+    pk: bigint
 }
 
 export class Candidate {
@@ -134,7 +67,10 @@ export class Candidate {
     readonly epochV: number
     public status: string
     public candidateTree: Tree
-    public v_in: bigint
+    public v_in: number
+    public votes: number
+    public address?: Address 
+    public nullifiers: bigint[]
 
     constructor(
         userID: number,
@@ -146,7 +82,9 @@ export class Candidate {
         this.epochV = epochV
         this.status = "Candidate"
         this.candidateTree = new Tree
-        this.v_in = BigInt(0)
+        this.v_in = 0
+        this.votes = 0
+        this.nullifiers = []
     }
 
     // getters
@@ -174,58 +112,129 @@ export class Candidate {
     public update_status() {
         this.status = "Verified"
     }
-}
 
-export class Mint {
-    public coin: Coin
-    public tx_mint: bigint[]
+    public cmp(candidate : Candidate) : boolean {
+        if (this.userID != candidate.userID) {
+            console.error("userID failed")
+            return false
+        }
 
-    constructor(coin: Coin, tx_mint: bigint[]){
-        this.coin = coin
-        this.tx_mint = tx_mint
+        if (this.name != candidate.name) {
+            console.error("name failed")
+            return false
+        }
+
+        if (this.epochV != candidate.epochV) {
+            console.error("epochV failed")
+            return false
+        }
+
+        if (this.status != candidate.status) {
+            console.error("status failed")
+            return false
+        }
+
+        if (this.candidateTree.members.length != candidate.candidateTree.members.length) {
+            console.error("tree failed")
+            return false
+        }
+
+        if (this.v_in != candidate.v_in) {
+            console.error("v_in failed")
+            return false
+        }
+
+        if (this.votes != candidate.votes) {
+            console.error("votes failed")
+            return false
+        }
+
+        if (JSON.stringify(this.nullifiers) != JSON.stringify(candidate.nullifiers)) {
+            console.error("nullifiers failed")
+            return false
+        }
+
+        if (this.address != candidate.address) {
+            console.error("address failed")
+            return false
+        }
+
+        return true
     }
 }
 
-export class Tx_Pour {
-    public rt: bigint // merkle root when generating pour
-    public sn_old: bigint // serial number of coin being poured from
-    public new_cm: bigint // commitment of new coin
-    public weight: bigint // weight of vote for candidate
-    public info: string // arbitrary string
-    public key: string // signature public key
-    public h: bigint // hash of signature pk
-    public proof: any[] // noir proof
-    public signature: ec.Signature // signature of public instances, proof and info
-
-    constructor (
-        rt: bigint,
-        sn_old: bigint,
-        new_cm: bigint,
-        weight: bigint,
-        info: string,
-        key: string,
-        h: bigint,
-        proof: any[],
-        signature: ec.Signature,
-    ) {
-        this.rt = rt
-        this.sn_old = sn_old
-        this.new_cm = new_cm
-        this.weight = weight
-        this.info = info
-        this.key = key
-        this.h = h
-        this.proof = proof
-        this.signature = signature
-    }
+// Result of the mint function producing the coin and tx
+export type Mint = {
+    // secret coin minted in voting tree
+    coin: Coin
+    // public mint transaction
+    tx_mint: Mint_Tx
 }
 
-export class Pour {
-    public coin: Coin
-    public tx_pour: Tx_Pour
+// Mint transaction
+export type Mint_Tx = {
+    cm: bigint;
+    value: number;
+    k: bigint;
+    s: bigint;
+}
 
-    constructor(coin: Coin, tx_pour: Tx_Pour) {
-        this.coin = coin
-        this.tx_pour = tx_pour
-    }
+// Result of WorldID registration
+export type Register = {
+    tx_mint: Mint_Tx;
+    coin: Coin;
+    pos: number;
+}
+
+// Pour transaction
+export type Tx_Pour = {
+    rt: bigint // merkle root when generating pour
+    sn_old: bigint // serial number of coin being poured from
+    new_cm_1: bigint // commitment of new coin in voting tree (value = old coin - weight) ||  (u * alpha)
+    new_cm_2: bigint // commitment of new coin in candidate tree (value = weight) || u * C / sum_i
+    v_pub: number[] // public values to verify correct values of coins
+    info: string // arbitrary string
+    key: ECDSA_address // one time signature public key
+    h: bigint // hash of signature pk
+    proof: any[] // noir proof
+    signature: ec.Signature // signature of public instances, proof and info
+}
+
+// Result of the pour function producing the coins and tx
+export type Pour = {
+    // the secret two coins produced from the pour
+    coin_1: Coin
+    coin_2: Coin
+    // the public pour transaction to be sent to the SC for verification
+    tx_pour: Tx_Pour
+}
+
+// Result of having voted
+export type Voting = {
+    tx_pour: Tx_Pour
+    voting_pos: number
+    userID_pos: number
+    userID: number
+    coin_1: Coin
+    coin_2: Coin
+}
+
+export type reward = {
+    // total voting power allocated to candidates to become verified
+    sum: number
+    // total voting power claimed back in the rewards for the epoch
+    claimed: number 
+}
+
+export type RewardMap = {
+    // epoch to reward map
+    [key: number]: reward
+}
+
+export type claimed = {
+    voting_pos: number
+    reward_pos: number
+    pour_tx: Tx_Pour
+    coin_1: Coin
+    coin_2: Coin
 }

@@ -1,6 +1,6 @@
 [package]
-name = "circuits"
-type = "bin"
+name = "socialGraph"
+type = "lib"
 authors = [""]
 compiler_version = ">=0.26.0"
 
