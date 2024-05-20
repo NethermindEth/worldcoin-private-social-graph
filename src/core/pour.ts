@@ -102,12 +102,12 @@ export function pour(
     } else {
         let changed = false
         // TODO: FIX THIS
-        // let halforder = order.shrn(1)
-        // // must be smaller than halforder of BN -> 0xFFFFFFFF FFFFFFFF FFFFFFFF FFFFFFFE BAAEDCE6 AF48A03B BFD25E8C D0364140
-        // if (signature.s.gt(halforder)) {
-        //     changed = true
-        //     signature.s = halforder.sub(signature.s)
-        // }
+        let halforder = order.shrn(1)
+        // must be smaller than halforder of BN -> 0xFFFFFFFF FFFFFFFF FFFFFFFF FFFFFFFE BAAEDCE6 AF48A03B BFD25E8C D0364140
+        if (signature.s.gt(halforder)) {
+            changed = true
+            signature.s = signature.s.sub(halforder)
+        }
         
         const tx_pour: Tx_Pour = {
             rt: rt,
@@ -132,25 +132,6 @@ export function pour(
 
         return new_pour
     }
-}
-
-/**
- * 
- * @param value - the order of the curve
- * @returns a promise that the value is of type BN
- * 
- * @description required to ensure that values are of type BN
- */
-async function ensure_bn(value: BN | null | undefined) : Promise<BN> {
-    return new Promise((resolve, reject) => {
-        if (!(typeof value === null || typeof value === undefined)) {
-            console.log("pooping", resolve.toString())
-            resolve
-        } else {
-            reject("Value is of type undefined or null")
-            throw new Error("Value is of type undefined or null");
-        }
-    })
 }
 
 /**
@@ -201,7 +182,7 @@ export function verifyPour(
             } else {
                 let halforder = order.shrn(1)
                 // must be smaller than halforder of BN -> 0xFFFFFFFF FFFFFFFF FFFFFFFF FFFFFFFE BAAEDCE6 AF48A03B BFD25E8C D0364140
-                sig.s = halforder.add(sig.s)
+                sig.s = sig.s.add(halforder)
                 if (!pour.tx_pour.key.verify(msg, sig)){
                     return false
                 }
