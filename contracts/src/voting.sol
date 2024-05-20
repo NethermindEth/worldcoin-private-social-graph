@@ -11,7 +11,7 @@ contract Voting is SocialGraph{
     
     constructor(
         Contract _worldIDVerificationContract,
-        Tree _votingTree, Tree _RewardsTree
+        Tree storage _votingTree, Tree storage _RewardsTree
     ) {
         // setup worldID verification
         worldIDVerificationContract = _worldIDVerificationContract;
@@ -27,10 +27,10 @@ contract Voting is SocialGraph{
         uint256 root, 
         uint256 nullifierHash, 
         uint256[8] calldata proof,
-        Mint tx_mint
+        Mint calldata tx_mint
         ) public {
         // Perform checks to verify World ID
-        worldIDContract.verifyAndExecute(signal, root, nullifierHash, proof);
+        worldIDVerificationContract.verifyAndExecute(signal, root, nullifierHash, proof);
         require(verifyMint(tx_mint));
         // ensure value of mint is equal to 100
         require(tx_mint.value == 100);
@@ -38,7 +38,7 @@ contract Voting is SocialGraph{
         voteMerkleRoot.push(VotingTree.insert(tx_mint.commitment));
     }
 
-    function registerAsCandidate(string calldata _name, Tree _candidateTree) public {
+    function registerAsCandidate(string calldata _name, Tree calldata _candidateTree) public {
         require(!users[msg.sender].isRegistered, "User is already registered");
         require(candidateTreeNonEmpty[msg.sender] == false,"Candidate already exists");
         candidateTrees[msg.sender] = _candidateTree;
@@ -48,14 +48,14 @@ contract Voting is SocialGraph{
         userAddress[id++] = msg.sender;
     }
 
-    function verifyMint(Mint tx_mint) returns(bool){
+    function verifyMint(Mint calldata tx_mint) public returns(bool){
         if(tx_mint.commitment == PoseidonT3.hash([tx_mint.value,tx_mint.k]))
             return true;
         else return false;
     }
 
     function vote(
-        Pour tx_pour,
+        Pour calldata tx_pour,
         uint256 weight,
         uint uid
         ) public {
@@ -64,20 +64,20 @@ contract Voting is SocialGraph{
             //not necessary to check since uint256
             require(weight >= 0, "Can only give positive weight");
             // check user has v_in + weight <= 10
-            require(users[userAddress[uid]].vin + weight <= 1000, "Candidate exceeded maximum voting power, try with a lesser weight");
+            require(users[userAddress[uid]].v_in + weight <= 1000, "Candidate exceeded maximum voting power, try with a lesser weight");
             // verify pour tx
-            require(verifyPour(tx_pour));
+            require(verify_pour(tx_pour));
             voteNullifiers.push(tx_pour.sn_old);
             voteNullifiersExists[tx_pour.sn_old] = true;
             uint256 new_root = VotingTree.insert(tx_pour.cm_1);
             voteMerkleRoot.push(new_root);
             voteMerkleRootExists[new_root] = true;
             userIDMerkleRoot[userAddress[uid]].push(candidateTrees[userAddress[uid]].insert(tx_pour.cm_2));
-            users[userAddress[uid]].vin += weight;
+            users[userAddress[uid]].v_in += weight;
             users[userAddress[uid]].numberOfVotes += 1;
     }
 
-    function verify_pour(Pour tx_pour) returns(bool){
+    function verify_pour(Pour calldata tx_pour) public returns(bool){
         if(voteNullifiersExists[tx_pour.sn_old]) {
             return false;
         } else if(!voteMerkleRootExists[tx_pour.rt]) {
@@ -111,22 +111,22 @@ contract Voting is SocialGraph{
         return ABDKMath64x64.toUInt(result);
     }
 
-    function updateStatusVerified(Mint tx_mint) public {
+    function updateStatusVerified(Mint calldata tx_mint) public {
         require(users[msg.sender].isRegistered, "You are not yet registered");
         require(users[msg.sender].status == 2, "You need to be a candidate in order to call this function");
-        require(users[msg.sender].vin >= x);
-        uint y = 100(1 - inversePower(users[msg.sender].vin/2));
+        require(users[msg.sender].v_in >= x);
+        uint y = 100*(1 - inversePower(users[msg.sender].v_in/2));
         require(verifyMint(tx_mint));
         uint256 new_root = VotingTree.insert(tx_mint.commitment);
-        voteMerkleRoot.push(root);
-        voteMerkleRootExists[root] = true;
+        voteMerkleRoot.push(new_root);
+        voteMerkleRootExists[new_root] = true;
         users[msg.sender].status = 1;
         uint c_epoch = (block.number/50064) + 1;
         users[msg.sender].epochV = c_epoch;
-        rewards_per_epoch[c_epoch].sum += users[msg.sender].vin;
+        rewards_per_epoch[c_epoch].sum += users[msg.sender].v_in;
     }
 
-    function claimRewards(uint uid, Pour tx_pour) public {
+    function claimRewards(uint uid, Pour calldata tx_pour) public {
         //compute current epoch
         uint c_epoch = (block.number/50064) + 1;
         //check userID is verified
@@ -140,7 +140,7 @@ contract Voting is SocialGraph{
         voteMerkleRootExists[new_root] = true;
         rewardsMerkleRoot.push(RewardsTree.insert(tx_pour.cm_2));
         uint i = users[userAddress[uid]].epochV;
-        if(sizeOfUserIDNullifiers == users[userAddress[uid]].numberOfVotes) {
+        if(sizeOfUserIDNullifiers[userAddress[uid]] == users[userAddress[uid]].numberOfVotes) {
             delete(candidateTrees[userAddress[uid]]);
             candidateTreeNonEmpty[userAddress[uid]] = false;
         }
@@ -151,12 +151,12 @@ contract Voting is SocialGraph{
 
     }
 
-    function penalise(){
+    function penalise() public{
         require(users[msg.sender].isRegistered, "You are not yet registered");
         require(users[msg.sender].status == 2, "You need to be a candidate in order to call this function");
         delete candidateTrees[msg.sender];
         delete userIDMerkleRoot[msg.sender];
-        users[msg.sender].vin = 0;
+        users[msg.sender].v_in = 0;
         users[msg.sender].numberOfVotes = 0;
     }
 
