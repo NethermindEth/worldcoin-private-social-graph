@@ -77,7 +77,7 @@ describe("Core tests", () => {
         })
     })
 
-    // TODO: Testing private graph class
+    // Testing private graph class
     describe("Private graph tests", () => {
         it("Should correctly create a zcash address key pair", () => {
             const social_graph = new PrivateGraph()

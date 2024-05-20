@@ -101,7 +101,6 @@ export function pour(
         throw new Error("Value is of type undefined or null")
     } else {
         let changed = false
-        // TODO: FIX THIS
         let halforder = order.shrn(1)
         // must be smaller than halforder of BN -> 0xFFFFFFFF FFFFFFFF FFFFFFFF FFFFFFFE BAAEDCE6 AF48A03B BFD25E8C D0364140
         if (signature.s.gt(halforder)) {
