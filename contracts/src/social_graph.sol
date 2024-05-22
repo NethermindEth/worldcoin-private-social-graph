@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
-import { Tree } from "./tree.sol";
 import { Contract } from "./Contract.sol";
+import {BinaryIMT, BinaryIMTData} from "https://github.com/privacy-scaling-explorations/zk-kit.solidity/blob/main/packages/imt/contracts/BinaryIMT.sol";
 
 contract SocialGraph {
+
     uint depth = 64;
     uint internal id = 1;
     uint internal x = 600;
@@ -28,10 +29,10 @@ contract SocialGraph {
 
     mapping (uint => Rewards) rewards_per_epoch;
     
-    mapping(address => Tree) candidateTrees;
+    mapping(address => BinaryIMTData) candidateTrees;
     mapping(address => bool) candidateTreeNonEmpty;
-    Tree VotingTree;
-    Tree RewardsTree;
+    BinaryIMTData VotingTree;
+    BinaryIMTData RewardsTree;
 
     mapping(address => uint256[]) userIDNullifiers;
     mapping(address => uint) sizeOfUserIDNullifiers;

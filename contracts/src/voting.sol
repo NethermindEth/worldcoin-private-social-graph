@@ -1,24 +1,24 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
-import { Tree } from "./tree.sol";
 import { Contract } from "./Contract.sol";
 import { SocialGraph } from "./social_graph.sol";
 import "poseidon-solidity/PoseidonT3.sol";
+// import "https://github.com/abdk-consulting/abdk-libraries-solidity/blob/master/ABDKMath64x64.sol";
+// import {BinaryIMT, BinaryIMTData} from "https://github.com/privacy-scaling-explorations/zk-kit.solidity/blob/main/packages/imt/contracts/BinaryIMT.sol";
+import "../../node_modules/abdk-libraries-solidity/ABDKMath64x64.sol";
+import {BinaryIMT, BinaryIMTData} from "../../node_modules/@zk-kit/imt.sol/BinaryIMT.sol";
 
 contract Voting is SocialGraph{
     Contract worldIDVerificationContract;
     
-    constructor(
-        Contract _worldIDVerificationContract,
-        Tree storage _votingTree, Tree storage _RewardsTree
-    ) {
+    constructor(Contract _worldIDVerificationContract) {
         // setup worldID verification
         worldIDVerificationContract = _worldIDVerificationContract;
         // setup tree and initialise with default zeros and push init root to history
-        VotingTree = _votingTree;
-        RewardsTree = _RewardsTree;
-        voteMerkleRoot.push(VotingTree.initWithDefaultZeroes(depth));   
+        BinaryIMT.initWithDefaultZeroes(VotingTree, depth);
+        BinaryIMT.initWithDefaultZeroes(RewardsTree, depth);
+        voteMerkleRoot.push(VotingTree.root);   
     }
 
     // Function to register an account as a World ID holder
@@ -35,16 +35,16 @@ contract Voting is SocialGraph{
         // ensure value of mint is equal to 100
         require(tx_mint.value == 100);
         // will add commitment to the on-chain tree
-        voteMerkleRoot.push(VotingTree.insert(tx_mint.commitment));
+        voteMerkleRoot.push(BinaryIMT.insert(VotingTree, tx_mint.commitment));
     }
 
-    function registerAsCandidate(string calldata _name, Tree calldata _candidateTree) public {
+    function registerAsCandidate(string calldata _name) public {
         require(!users[msg.sender].isRegistered, "User is already registered");
         require(candidateTreeNonEmpty[msg.sender] == false,"Candidate already exists");
-        candidateTrees[msg.sender] = _candidateTree;
+        BinaryIMT.initWithDefaultZeroes(candidateTrees[msg.sender], depth);
         candidateTreeNonEmpty[msg.sender] = true;
         // add user to user map
-        users[msg.sender] = User(id, _name, 0,0,2,0,1);
+        users[msg.sender] = User(id, _name, 0, 0, 2, 0, true);
         userAddress[id++] = msg.sender;
     }
 
@@ -69,10 +69,10 @@ contract Voting is SocialGraph{
             require(verify_pour(tx_pour));
             voteNullifiers.push(tx_pour.sn_old);
             voteNullifiersExists[tx_pour.sn_old] = true;
-            uint256 new_root = VotingTree.insert(tx_pour.cm_1);
+            uint256 new_root = BinaryIMT.insert(VotingTree, tx_pour.cm_1);
             voteMerkleRoot.push(new_root);
             voteMerkleRootExists[new_root] = true;
-            userIDMerkleRoot[userAddress[uid]].push(candidateTrees[userAddress[uid]].insert(tx_pour.cm_2));
+            userIDMerkleRoot[userAddress[uid]].push(BinaryIMT.insert(candidateTrees[userAddress[uid]], tx_pour.cm_2));
             users[userAddress[uid]].v_in += weight;
             users[userAddress[uid]].numberOfVotes += 1;
     }
@@ -117,7 +117,7 @@ contract Voting is SocialGraph{
         require(users[msg.sender].v_in >= x);
         uint y = 100*(1 - inversePower(users[msg.sender].v_in/2));
         require(verifyMint(tx_mint));
-        uint256 new_root = VotingTree.insert(tx_mint.commitment);
+        uint256 new_root = BinaryIMT.insert(VotingTree, tx_mint.commitment);
         voteMerkleRoot.push(new_root);
         voteMerkleRootExists[new_root] = true;
         users[msg.sender].status = 1;
@@ -135,10 +135,10 @@ contract Voting is SocialGraph{
         require(verify_pour(tx_pour));
         userIDNullifiers[userAddress[uid]].push(tx_pour.sn_old);
         sizeOfUserIDNullifiers[userAddress[uid]] += 1;
-        uint256 new_root = VotingTree.insert(tx_pour.cm_1);
+        uint256 new_root = BinaryIMT.insert(VotingTree, tx_pour.cm_1);
         voteMerkleRoot.push(new_root);
         voteMerkleRootExists[new_root] = true;
-        rewardsMerkleRoot.push(RewardsTree.insert(tx_pour.cm_2));
+        rewardsMerkleRoot.push(BinaryIMT.insert(RewardsTree, tx_pour.cm_2));
         uint i = users[userAddress[uid]].epochV;
         if(sizeOfUserIDNullifiers[userAddress[uid]] == users[userAddress[uid]].numberOfVotes) {
             delete(candidateTrees[userAddress[uid]]);
