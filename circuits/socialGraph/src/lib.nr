@@ -12,7 +12,57 @@ fn verify_merkle_proof(leaf: Field, siblings: [Field], indices: [Field], root: F
                 node = hash2([siblings[i], node]);        
         }
     }
+    
     assert(root == node);
+}
+
+fn claim_pour(
+    // public instances
+    root: pub Field,
+    old_sn: pub Field,
+    new_cm_1: pub Field,
+    new_cm_2: pub Field,
+    v_pub: pub [Field], // layout: [alpha, C, sum_i]
+    h_sig: pub Field,
+    h: pub Field,
+    // private witnesses
+    siblings: [Field], 
+    indices: [Field],
+    old_coin: structs::Coin,
+    old_sk: Field,
+    new_coin_1: structs::Coin,
+    new_coin_2: structs::Coin
+) -> bool {
+    // 1. check merkle proof
+    verify_merkle_proof(old_coin.commitment, siblings, indices, root);
+    
+    // 2. verify address => address public key = PRF(sk || 0)
+    assert(old_coin.pk_address == hash2([old_sk, 0]));
+
+    // 3. verify old serial number is computed correctly
+    assert(old_sn == hash2([old_sk, old_coin.nullifier_seed]));
+
+    // 4. coins are well formed
+    // a. verify old commitment is computed correctly
+    let hash_pk_null = hash2([old_coin.pk_address, old_coin.nullifier_seed]);
+    let k = hash2([old_coin.r, hash_pk_null]);
+    assert(old_coin.commitment == hash2([1, k]));
+    // b. verify new commitment is computed correctly - Coin 1
+    let hash_pk_null = hash2([new_coin_1.pk_address, new_coin_1.nullifier_seed]);
+    let k = hash2([new_coin_1.r, hash_pk_null]);
+    assert(new_cm_1 == hash2([1, k])); 
+    // c. verify new commitment is computed correctly - Coin 2
+    let hash_pk_null = hash2([new_coin_2.pk_address, new_coin_2.nullifier_seed]);
+    let k = hash2([new_coin_2.r, hash_pk_null]);
+    assert(new_cm_2 == hash2([1, k])); 
+
+    // 5. check hash is correctly computed
+    assert(h == hash4([old_sk, 2, 1, h_sig]));
+
+    // 6. check value is consistent between old and new coins
+    assert(new_coin_1.value == old_coin.value * v_pub[0]);
+    assert(new_coin_2.value == (old_coin.value * v_pub[1] / v_pub[2]));
+    true
 }
 
 fn pour (
@@ -57,10 +107,11 @@ fn pour (
 }
 
 #[export]
-fn hash2(x: [Field; 2]) -> Field {
+pub fn hash2(x: [Field; 2]) -> Field {
     poseidon::bn254::hash_2(x)
 }
 
+#[export]
 fn hash4(x: [Field; 4]) -> Field {
     poseidon::bn254::hash_4(x)
 }

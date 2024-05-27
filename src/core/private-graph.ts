@@ -265,7 +265,7 @@ export class PrivateGraph {
         // add coin commitment 2 to rewards tree
         const reward_pos = this.rewards_tree.addMember(Pour.coin_2.cm)
 
-        // TODO: check if this is correct mathematically
+        // TODO: CHECK USER ID SIZE = NUMBER OF VOTES IF SO DELETE THE USER TREE
         this.rewards[verified_epoch].claimed += this.candidates[userID].v_in
     
         const claimed_rewards : claimed = {

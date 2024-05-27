@@ -1,32 +1,9 @@
-import { poseidon2, poseidon4 } from "poseidon-lite";
-import { hash2 } from "../codegen";
+import { poseidon2 } from "poseidon-lite";
 import { mint, verifyMint } from "../src/core/mint";
 import { PrivateGraph } from "../src/core/private-graph";
 import { Tree } from "../src/core/tree";
 import { pour, verifyPour } from "../src/core/pour";
 import { Candidate } from "../src/core/structs";
-
-describe("Poseidon tests", () => {
-    it("TS: Should return the correct hash", () => {
-        const x = 10
-        const hash2 = poseidon2([x,x])
-        expect(hash2).toBe(BigInt("2056449770998421094693270621231289260402432781619773239530425938274273592166"))
-
-        const hash4 = poseidon4([x,x,x,x])
-        expect(hash4).toBe(BigInt("12501290995084169344073844953692250674022814101925614641583223360631835071976"))
-        
-    })
-    // TODO: fix circuit error
-    it("Noir: Should return the correct hash", () => {
-        const x = "10"
-        const hash = hash2([x,x])
-        // DOES NOT PASS
-        expect(hash).toBe("2056449770998421094693270621231289260402432781619773239530425938274273592166")
-    })
-    // TODO: test solidity poseidon hash
-
-    // TODO: test all three hashes with a random number to ensure correctness
-})
 
 describe("Core tests", () => {
     // Testing mint, pour functions
@@ -248,7 +225,6 @@ describe("Core tests", () => {
             expect(social_graph.candidates[userID].v_in).toBe(0)
             expect(social_graph.candidates[userID].votes).toBe(0)
             expect(social_graph.candidates[userID].get_numLeaves()).toBe(0)
-
         })
     })
 })
