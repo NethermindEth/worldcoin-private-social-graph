@@ -9,7 +9,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "jest"
+    "test": "jest -t 'Integration Tests'"
   },
   "dependencies": {
     "@noir-lang/noir_js": "^0.29.0",
