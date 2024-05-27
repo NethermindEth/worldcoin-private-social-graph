@@ -3,7 +3,7 @@ import { verify_merkle_proof } from "../codegen";
 
 describe("Integration Tests", () => {
     // TODO: fix `unwrap_throw` failed
-    it("Should verify a merkle proof", () => {
+    it("Should verify a merkle proof", async () => {
         const tree = new Tree()
         const idx = tree.addMember("101")
         const idx_proof = tree.generateMerkleProof(idx)
@@ -22,7 +22,9 @@ describe("Integration Tests", () => {
         const pathIndices = idx_proof.pathIndices.map(i => i.toString())
         const root = idx_proof.root
 
-        expect(verify_merkle_proof(leaf, siblings, pathIndices, root)).toBe(true)
+        const pass = await verify_merkle_proof(leaf, siblings, pathIndices, root)
+
+        expect(pass).toBe(true)
     })
 
     it("Should verify a pour transaction", () => {
