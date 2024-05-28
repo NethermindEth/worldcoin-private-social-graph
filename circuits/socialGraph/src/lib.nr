@@ -1,5 +1,4 @@
 use dep::std::hash::poseidon;
-mod structs;
 
 #[export]
 fn verify_merkle_proof(leaf: Field, siblings: [Field; 64], indices: [Field; 64], root: Field) -> bool {
@@ -14,6 +13,82 @@ fn verify_merkle_proof(leaf: Field, siblings: [Field; 64], indices: [Field; 64],
     }
     
     assert(root == node);
+    true
+}
+
+#[export]
+pub fn vote_pour(
+    // public instances
+    root: Field,
+    old_sn: Field,
+    new_cm_1: Field,
+    new_cm_2: Field,
+    v_pub: Field, // weight
+    h_sig: Field,
+    h: Field,
+    // private witnesses
+    siblings: [Field; 64], 
+    indices: [Field; 64],
+    // old coin
+    old_coin_pk_address: Field,
+    old_coin_value: Field,
+    old_coin_nullifier_seed: Field,
+    old_coin_r: Field,
+    old_coin_s: Field,
+    old_coin_commitment: Field,
+    old_sk: Field,
+    // new coin 1
+    new_coin_1_pk_address: Field,
+    new_coin_1_value: Field,
+    new_coin_1_nullifier_seed: Field,
+    new_coin_1_r: Field,
+    new_coin_1_s: Field,
+    new_coin_1_commitment: Field,
+    // new coin 2
+    new_coin_2_pk_address: Field,
+    new_coin_2_value: Field,
+    new_coin_2_nullifier_seed: Field,
+    new_coin_2_r: Field,
+    new_coin_2_s: Field,
+    new_coin_2_commitment: Field,
+) -> bool {
+    // 1. check merkle proof
+    assert(verify_merkle_proof(old_coin_commitment, siblings, indices, root));
+    
+    // 2. verify address => address public key = PRF(sk || 0)
+    assert(old_coin_pk_address == hash2([old_sk, 0]));
+
+    // 3. verify old serial number is computed correctly
+    let hash_sk_null = hash2([old_sk, 1]);
+    assert(old_sn == hash2([hash_sk_null, old_coin_nullifier_seed]));
+
+    // 4. coins are well formed
+    // a. verify old commitment is computed correctly
+    let hash_pk_null = hash2([old_coin_pk_address, old_coin_nullifier_seed]);
+    let hash_r_pk_null = hash2([old_coin_r, hash_pk_null]);
+    let temp = hash2([hash_r_pk_null, 0]);
+    assert(old_coin_commitment == hash2([temp, old_coin_value]));
+
+    // b. verify new commitment is computed correctly - Coin 1
+    let hash_pk_null = hash2([new_coin_1_pk_address, new_coin_1_nullifier_seed]);
+    let hash_r_pk_null = hash2([new_coin_1_r, hash_pk_null]);
+    let temp = hash2([hash_r_pk_null, 0]);
+    assert(new_cm_1 == hash2([temp, new_coin_1_value])); 
+    assert(new_cm_1 == new_coin_1_commitment);
+
+    // c. verify new commitment is computed correctly - Coin 2
+    let hash_pk_null = hash2([new_coin_2_pk_address, new_coin_2_nullifier_seed]);
+    let hash_r_pk_null = hash2([new_coin_2_r, hash_pk_null]);
+    let temp = hash2([hash_r_pk_null, 0]);
+    assert(new_cm_2 == hash2([temp, new_coin_2_value])); 
+    assert(new_cm_2 == new_coin_2_commitment);
+
+    // 5. check hash is correctly computed
+    assert(h == hash4([old_sk, 2, 0, h_sig]));
+
+    // 6. check value is consistent between old and new coins
+    assert(new_coin_1_value == old_coin_value - v_pub);
+    assert(new_coin_2_value == v_pub);
     true
 }
 
