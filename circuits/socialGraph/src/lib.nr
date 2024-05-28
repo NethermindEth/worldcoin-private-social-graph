@@ -3,10 +3,9 @@ mod structs;
 
 #[export]
 fn verify_merkle_proof(leaf: Field, siblings: [Field; 64], indices: [Field; 64], root: Field) -> bool {
-    let n = siblings.len();
     let mut node = leaf;
 
-    for i in 0..n {
+    for i in 0..64 {
         if (indices[i] == 0) {
                 node = hash2([node, siblings[i]]);
         } else {
