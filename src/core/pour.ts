@@ -1,5 +1,5 @@
-import { poseidon1, poseidon2, poseidon4 } from "poseidon-lite";
-import { ECDSA_address, Coin, Tx_Pour, Pour, Address } from "./structs";
+import { poseidon1, poseidon2, poseidon3, poseidon4 } from "poseidon-lite";
+import { ECDSA_address, Coin, Tx_Pour, Pour, Address, modulus } from "./structs";
 import { Tree } from "./tree";
 import { IMTMerkleProof } from "@zk-kit/imt"
 import { ec } from "elliptic"
@@ -33,15 +33,16 @@ export function pour(
     new_pk_address_2: bigint,
     v_pub: number[],
     info: string
-) {
+) : Pour {
     // generate old serial number
-    const sn_old = poseidon2([old_sk, old_coin.seed])
+    const sn_old = poseidon3([old_sk,1,old_coin.seed]) // following zcash serial number PRF
+
     // Compute coin 1:
     // sample nullifier seed
-    const seed_1 = BigInt(Math.random() * 2**256)
+    const seed_1 = BigInt(Math.random() * modulus)
     // sample trapdoors
-    let r_1 = BigInt(Math.random() * 2**256)
-    let s_1 = BigInt(Math.random() * 2**256)
+    let r_1 = BigInt(Math.random() * modulus)
+    let s_1 = BigInt(Math.random() * modulus)
     // compute 2-step commitment
     const new_k_1 = poseidon2([r_1, poseidon2([new_pk_address_1, seed_1])])
     const new_cm_1 = poseidon2([v_1, new_k_1])
@@ -50,16 +51,16 @@ export function pour(
         value: v_1, 
         seed: seed_1, 
         r: r_1, 
-        s:s_1, 
-        cm:new_cm_1
+        s: s_1, 
+        cm: new_cm_1
     }
 
     // Compute coin 2:
     // sample nullifier seed
-    const seed_2 = BigInt(Math.random() * 2**256)
+    const seed_2 = BigInt(Math.random() * modulus)
     // sample trapdoors
-    let r_2 = BigInt(Math.random() * 2**256)
-    let s_2 = BigInt(Math.random() * 2**256)
+    let r_2 = BigInt(Math.random() * modulus)
+    let s_2 = BigInt(Math.random() * modulus)
     // compute 2-step commitment
     const new_k_2 = poseidon2([r_2, poseidon2([new_pk_address_2, seed_2])])
     const new_cm_2 = poseidon2([v_2, new_k_2])
@@ -68,8 +69,8 @@ export function pour(
         value: v_2, 
         seed: seed_2, 
         r: r_2, 
-        s:s_2, 
-        cm:new_cm_2
+        s: s_2, 
+        cm: new_cm_2
     }
 
     // generate One-time strongly-unforgeable digital signatures (ECDSA) key-pair
@@ -171,17 +172,17 @@ export function verifyPour(
     
 
     if (!pour.tx_pour.key.verify(msg, pour.tx_pour.signature)) {
-            let order = EC.n
-            if (order === null || order === undefined) {
-                throw new Error("Value is of type undefined or null")
-            } else {
-                let halforder = order.shrn(1)
-                // must be smaller than halforder of BN -> 0xFFFFFFFF FFFFFFFF FFFFFFFF FFFFFFFE BAAEDCE6 AF48A03B BFD25E8C D0364140
-                sig.s = sig.s.add(halforder)
-                if (!pour.tx_pour.key.verify(msg, sig)){
-                    return false
-                }
+        let order = EC.n
+        if (order === null || order === undefined) {
+            throw new Error("Value is of type undefined or null")
+        } else {
+            let halforder = order.shrn(1)
+            // must be smaller than halforder of BN -> 0xFFFFFFFF FFFFFFFF FFFFFFFF FFFFFFFE BAAEDCE6 AF48A03B BFD25E8C D0364140
+            sig.s = sig.s.add(halforder)
+            if (!pour.tx_pour.key.verify(msg, sig)){
+                return false
             }
+        }
     }
 
     // TODO: verify circuit proof

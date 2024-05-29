@@ -1,5 +1,5 @@
 import { poseidon2 } from "poseidon-lite";
-import { Coin, Mint, Mint_Tx } from "./structs";
+import { Coin, Mint, Mint_Tx, modulus } from "./structs";
 
 /**
  * 
@@ -11,10 +11,10 @@ import { Coin, Mint, Mint_Tx } from "./structs";
  */
 export function mint(pk: bigint, value: number) : Mint {
     // sample nullifier seed
-    const seed = BigInt(Math.random() * 2**256)
+    const seed = BigInt(Math.random() * modulus)
     // sample trapdoors
-    const r = BigInt(Math.random() * 2**256)
-    const s = BigInt(Math.random() * 2**256) // s is not used as specified in the zcash paper but like zcash we still inlcude it
+    const r = BigInt(Math.random() * modulus)
+    const s = BigInt(Math.random() * modulus) // s is not used as specified in the zcash paper but like zcash we still inlcude it
     
     const k = poseidon2([r, poseidon2([pk, seed])])
     const cm = poseidon2([value, k])
@@ -24,7 +24,7 @@ export function mint(pk: bigint, value: number) : Mint {
         value: value,
         seed: seed, 
         r: r, 
-        s:s, 
+        s: s, 
         cm: cm
     }
 
