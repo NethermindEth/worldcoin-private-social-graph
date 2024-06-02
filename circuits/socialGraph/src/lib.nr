@@ -17,7 +17,7 @@ fn verify_merkle_proof(leaf: Field, siblings: [Field; 64], indices: [Field; 64],
 }
 
 #[export]
-fn vote_pour(
+pub fn vote_pour(
     // public instances
     root: Field,
     old_sn: Field,
@@ -86,7 +86,7 @@ fn vote_pour(
 }
 
 #[export]
-fn claim_pour(
+pub fn claim_pour(
     // public instances
     root: Field,
     old_sn: Field,
