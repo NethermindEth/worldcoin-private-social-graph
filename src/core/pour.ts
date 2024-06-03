@@ -1,7 +1,8 @@
 import { poseidon1, poseidon2, poseidon3, poseidon4 } from "poseidon-lite";
-import { ECDSA_address, Coin, Tx_Pour, Pour, Address, modulus } from "./structs";
+import { ECDSA_address, Coin, Tx_Pour, Pour, modulus } from "./structs";
 import { Tree } from "./tree";
 import { IMTMerkleProof } from "@zk-kit/imt"
+import { writeFileSync } from "fs";
 import { ec } from "elliptic"
 const EC = new ec('secp256k1')
 
@@ -45,7 +46,7 @@ export function pour(
     let s_1 = BigInt(Math.random() * modulus)
     // compute 2-step commitment
     const new_k_1 = poseidon2([r_1, poseidon2([new_pk_address_1, seed_1])])
-    const new_cm_1 = poseidon2([v_1, new_k_1])
+    const new_cm_1 = poseidon3([new_k_1, 0, v_1])
     const coin_1: Coin = {
         public_key: new_pk_address_1, 
         value: v_1, 
@@ -63,7 +64,7 @@ export function pour(
     let s_2 = BigInt(Math.random() * modulus)
     // compute 2-step commitment
     const new_k_2 = poseidon2([r_2, poseidon2([new_pk_address_2, seed_2])])
-    const new_cm_2 = poseidon2([v_2, new_k_2])
+    const new_cm_2 = poseidon3([new_k_2, 0, v_2])
     const coin_2: Coin = {
         public_key:new_pk_address_2, 
         value: v_2, 
@@ -80,9 +81,62 @@ export function pour(
     // hash sig pub key
     const h_sig = poseidon1([sig_key_pair.get_pub()])
     // hash of signature with old address secret key
-    const h = poseidon4([old_sk, 2, 1, h_sig]) // padding taken from zcash doc
+    const h = poseidon4([old_sk, 2, 0, h_sig]) // padding taken from zcash doc
 
     // TODO: call Noir pour circuit
+    if (v_pub.length == 3) {
+        // call claim pour
+        // TODO: write in circuits/claimPour/Prover.toml the values
+
+        const claim_path = "circuits/claimPour/Prover.toml"
+
+        let pathIndicesString = "["
+        let siblingsString = "["
+
+        for (var i = 0; i < 64 ; i++) {
+            pathIndicesString += "\"" + path.pathIndices[i] + "\","
+            siblingsString += "\"" + path.siblings[i] + "\","
+        }
+
+        pathIndicesString += "]"
+        siblingsString += "]"
+
+        const v_pub_string = "[" + "\"" + v_pub[0] + "\"," + "\"" + v_pub[1] + "\"," + "\"" + v_pub[2] + "\"]"
+
+        const inputs = "h=\"" + h + "\"\n" + 
+        "h_sig=\"" + h_sig + "\"\n" + 
+        "indices=" + pathIndicesString + "\n" + 
+        "new_cm_1=\"" + new_cm_1 + "\"\n" + 
+        "new_cm_2=\"" + new_cm_2 + "\"\n" + 
+        "new_coin_1_commitment=\"" + coin_1.cm + "\"\n" + 
+        "new_coin_1_nullifier_seed=\"" + coin_1.seed + "\"\n" + 
+        "new_coin_1_pk_address=\"" + coin_1.public_key + "\"\n" + 
+        "new_coin_1_r=\"" + coin_1.r + "\"\n" + 
+        "new_coin_1_value=\"" + coin_1.value + "\"\n" + 
+        "new_coin_2_commitment=\"" + coin_2.cm + "\"\n" + 
+        "new_coin_2_nullifier_seed=\"" + coin_2.seed + "\"\n" + 
+        "new_coin_2_pk_address=\"" + coin_2.public_key + "\"\n" + 
+        "new_coin_2_r=\"" + coin_2.r + "\"\n" + 
+        "new_coin_2_value=\"" + coin_2.value + "\"\n" + 
+        "old_coin_commitment=\"" + old_coin.cm + "\"\n" + 
+        "old_coin_nullifier_seed=\"" + old_coin.seed + "\"\n" + 
+        "old_coin_pk_address=\"" + old_coin.public_key + "\"\n" + 
+        "old_coin_r=\"" + old_coin.r + "\"\n" + 
+        "old_coin_value=\"" + old_coin.value + "\"\n" + 
+        "old_sk=\"" + old_sk + "\"\n" + 
+        "old_sn=\"" + sn_old + "\"\n" + 
+        "root=\"" + rt + "\"\n" + 
+        "siblings=" + siblingsString + "\n" + 
+        "v_pub=" + v_pub_string + "\n";
+
+        // console.log(inputs)
+
+        writeFileSync(claim_path, inputs)
+
+        // TODO: call `nargo prove`
+    } else {
+        // call vote pour
+    }
     const pour_instance: any = []
     const proof: any[] = []
 
@@ -158,7 +212,7 @@ export function verifyPour(
 
     // check h corresponds h_sig
     const h_sig = poseidon1([pour.tx_pour.key.get_pub()])
-    if (pour.tx_pour.h != poseidon4([old_sk, 2, 1, h_sig])) {
+    if (pour.tx_pour.h != poseidon4([old_sk, 2, 0, h_sig])) {
         return false
     }
 

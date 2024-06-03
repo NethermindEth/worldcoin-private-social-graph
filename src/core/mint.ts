@@ -1,4 +1,4 @@
-import { poseidon2 } from "poseidon-lite";
+import { poseidon2, poseidon3 } from "poseidon-lite";
 import { Coin, Mint, Mint_Tx, modulus } from "./structs";
 
 /**
@@ -17,7 +17,7 @@ export function mint(pk: bigint, value: number) : Mint {
     const s = BigInt(Math.random() * modulus) // s is not used as specified in the zcash paper but like zcash we still inlcude it
     
     const k = poseidon2([r, poseidon2([pk, seed])])
-    const cm = poseidon2([value, k])
+    const cm = poseidon3([k, 0, value])
 
     const coin : Coin = {
         public_key: pk, 
@@ -44,5 +44,5 @@ export function mint(pk: bigint, value: number) : Mint {
  * @returns true if the commitment corresponds to the hash of the value with k, otherwise false
  */
 export function verifyMint(cm: bigint, v: number, k: bigint) : boolean {
-    return (cm == poseidon2([v, k]));
+    return (cm == poseidon3([k, 0, v]));
 }
