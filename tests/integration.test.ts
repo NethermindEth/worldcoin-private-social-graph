@@ -1,8 +1,7 @@
 import { Tree } from "../src/core/tree";
-import { verify_merkle_proof, claim_pour } from "../codegen";
+import { verify_merkle_proof, claim_pour, vote_pour } from "../codegen";
 import { PrivateGraph } from "../src/core/private-graph";
 import { poseidon1 } from "poseidon-lite";
-import { modulus } from "../src/core/structs";
 
 describe("Integration Tests", () => {
     it("Should verify a merkle proof", async () => {
@@ -18,12 +17,85 @@ describe("Integration Tests", () => {
         const pass = await verify_merkle_proof(leaf, siblings, pathIndices, root)
 
         expect(pass).toBe(true)
-    })
+    }, 1920 * 1000)
 
     // TODO: Testing for vote circuit
-    it("Should verify a valid vote transaction", () => {
+    it("Should verify a valid vote transaction", async () => {
+        const social_graph = new PrivateGraph()
+        const userID = social_graph.registerCandidate("Jim", 1)
 
-    })
+        const old_zcash_address = social_graph.create_address()
+
+        const register = social_graph.registerWorldID(old_zcash_address.pk)
+
+        const new_zcash_key_pair_1 = social_graph.create_address()
+        const new_zcash_key_pair_2 = social_graph.create_address()
+
+        const weight = 50
+
+        const voted = await social_graph.vote(register.coin, old_zcash_address, new_zcash_key_pair_1.pk, new_zcash_key_pair_2.pk, userID, weight)
+
+        const old_coin = register.coin
+
+        const root = voted.tx_pour.rt
+
+        const old_sn = voted.tx_pour.sn_old
+
+        const new_cm_1 = voted.coin_1.cm
+
+        const new_cm_2 = voted.coin_2.cm
+
+        const v_pub = voted.tx_pour.v_pub
+
+        const h_sig = poseidon1([voted.tx_pour.key.get_pub()])
+
+        const h = voted.tx_pour.h
+
+        const candidate_tree = social_graph.candidates[userID].candidateTree
+        const idx_proof = candidate_tree.generateMerkleProof(candidate_tree.indexOf(voted.coin_2.cm))
+        const siblings = idx_proof.siblings
+        const pathIndices = idx_proof.pathIndices
+
+        const old_coin_pk_address = old_coin.public_key
+
+        const old_coin_value = old_coin.value
+
+        const old_coin_nullifier_seed = old_coin.seed
+
+        const old_coin_r = old_coin.r
+
+        const old_coin_s = old_coin.s
+
+        const old_coin_commitment = old_coin.cm
+
+        const old_sk = old_zcash_address.sk
+
+        const new_coin_1_pk_address = voted.coin_1.public_key
+
+        const new_coin_1_value = voted.coin_1.value
+
+        const new_coin_1_nullifier_seed = voted.coin_1.seed
+
+        const new_coin_1_r = voted.coin_1.r
+
+        const new_coin_1_s = voted.coin_1.s
+
+        const new_coin_1_commitment = voted.coin_1.cm
+
+        const new_coin_2_pk_address = voted.coin_2.public_key
+
+        const new_coin_2_value = voted.coin_2.value
+
+        const new_coin_2_nullifier_seed = voted.coin_2.seed
+
+        const new_coin_2_r = voted.coin_2.r
+
+        const new_coin_2_s = voted.coin_2.s
+
+        const new_coin_2_commitment = voted.coin_2.cm
+
+        expect(await vote_pour(root.toString(), old_sn.toString(), new_cm_1.toString(), new_cm_2.toString(), v_pub[0].toString(), h_sig.toString(), h.toString(), siblings.map(i => i.toString()), pathIndices.map(i => i.toString()), old_coin_pk_address.toString(), old_coin_value.toString(), old_coin_nullifier_seed.toString(), old_coin_r.toString(), old_coin_s.toString(), old_coin_commitment.toString(), old_sk.toString(), new_coin_1_pk_address.toString(), new_coin_1_value.toString(), new_coin_1_nullifier_seed.toString(), new_coin_1_r.toString(), new_coin_1_s.toString(), new_coin_1_commitment.toString(), new_coin_2_pk_address.toString(), new_coin_2_value.toString(), new_coin_2_nullifier_seed.toString(), new_coin_2_r.toString(), new_coin_2_s.toString(), new_coin_2_commitment.toString())).toBe(true)
+    }, 960 * 1000)
 
     it("Should verify a valid claim pour transaction", async () => {
         const social_graph = new PrivateGraph()
@@ -47,7 +119,7 @@ describe("Integration Tests", () => {
 
             addrs_2.push(new_zcash_key_pair_2)
 
-            let voted = social_graph.vote(register.coin, old_zcash_address, new_zcash_key_pair_1.pk, new_zcash_key_pair_2.pk, userID, weight)
+            let voted = await social_graph.vote(register.coin, old_zcash_address, new_zcash_key_pair_1.pk, new_zcash_key_pair_2.pk, userID, weight)
             
             votes.push(voted)
         }
@@ -60,7 +132,7 @@ describe("Integration Tests", () => {
         const new_zcash_key_pair_1 = social_graph.create_address()
         const new_zcash_key_pair_2 = social_graph.create_address()
 
-        const claim_rewards = social_graph.claim(old_coin, old_address, new_zcash_key_pair_1.pk, new_zcash_key_pair_2.pk, userID, 10)
+        const claim_rewards = await social_graph.claim(old_coin, old_address, new_zcash_key_pair_1.pk, new_zcash_key_pair_2.pk, userID, 10)
         
         const root = claim_rewards.pour_tx.rt
 
@@ -149,5 +221,5 @@ describe("Integration Tests", () => {
         //             "new coin 2 commitment: ", new_coin_2_commitment.toString())
 
         expect(await claim_pour(root.toString(), old_sn.toString(), new_cm_1.toString(), new_cm_2.toString(), v_pub.map(i => i.toString()), h_sig.toString(), h.toString(), siblings.map(i => i.toString()), pathIndices.map(i => i.toString()), old_coin_pk_address.toString(), old_coin_value.toString(), old_coin_nullifier_seed.toString(), old_coin_r.toString(), old_coin_s.toString(), old_coin_commitment.toString(), old_sk.toString(), new_coin_1_pk_address.toString(), new_coin_1_value.toString(), new_coin_1_nullifier_seed.toString(), new_coin_1_r.toString(), new_coin_1_s.toString(), new_coin_1_commitment.toString(), new_coin_2_pk_address.toString(), new_coin_2_value.toString(), new_coin_2_nullifier_seed.toString(), new_coin_2_r.toString(), new_coin_2_s.toString(), new_coin_2_commitment.toString())).toBe(true)
-    })
+    }, 1920 * 1000)
 })

@@ -17,7 +17,7 @@ describe("Core tests", () => {
             expect(verifyMint(m.tx_mint.cm, m.coin.value, m.tx_mint.k)).toBe(true)
         })
 
-        it("Should correctly pour an old coin into 2 new ones", () => { // will fail if the signature has been changed
+        it("Should correctly pour an old coin into 2 new ones", async () => { // will fail if the signature has been changed
             // mint a new coin and construct the tx
             const m = mint(zcash_key_pair.pk, 100)
 
@@ -31,7 +31,7 @@ describe("Core tests", () => {
             const new_zcash_key_pair_2 = social_graph.create_address()
             
             // call pour function
-            const p = pour(
+            const p = await pour(
                 tree.root,
                 m.coin,
                 zcash_key_pair.sk,
@@ -45,13 +45,13 @@ describe("Core tests", () => {
             )
 
             // Verify pour tx
-            expect(verifyPour(
+            expect(await verifyPour(
                 tree,
                 p,
                 social_graph.vote_nullifiers,
                 zcash_key_pair.sk
             )).toBe(true)            
-        })
+        }, 960 * 1000)
     })
 
     // Testing private graph class
@@ -83,7 +83,7 @@ describe("Core tests", () => {
             expect(new_candidate.cmp(new Candidate(userID+1, "Jim", 10))).toBe(true)
         })
 
-        it("Should allow users with coins to vote", () => {
+        it("Should allow users with coins to vote", async () => {
             const social_graph = new PrivateGraph()
             const userID = social_graph.registerCandidate("Jim", 1)
 
@@ -96,16 +96,16 @@ describe("Core tests", () => {
 
             const weight = 50
 
-            const voted = social_graph.vote(register.coin, old_zcash_address, new_zcash_key_pair_1.pk, new_zcash_key_pair_2.pk, userID, weight)
+            const voted = await social_graph.vote(register.coin, old_zcash_address, new_zcash_key_pair_1.pk, new_zcash_key_pair_2.pk, userID, weight)
 
             expect(social_graph.voting_tree.indexOf(voted.tx_pour.new_cm_1)).toBe(voted.voting_pos)
             expect(social_graph.vote_nullifiers[social_graph.vote_nullifiers.length-1]).toBe(voted.tx_pour.sn_old)
             expect(social_graph.candidates[userID].v_in).toBe(weight)
             expect(social_graph.candidates[userID].votes).toBe(1)
             expect(social_graph.candidates[userID].candidateTree.indexOf(voted.tx_pour.new_cm_2)).toBe(voted.userID_pos)
-        })
+        }, 960 * 1000)
         
-        it("Should allow a candidate to become verified if enough users vote for it", () => {
+        it("Should allow a candidate to become verified if enough users vote for it", async () => {
             const social_graph = new PrivateGraph()
             // user to become verified
             const userID = social_graph.registerCandidate("Jim", 10)
@@ -120,7 +120,7 @@ describe("Core tests", () => {
                 let new_zcash_key_pair_1 = social_graph.create_address()
                 let new_zcash_key_pair_2 = social_graph.create_address()
 
-                let voted = social_graph.vote(register.coin, old_zcash_address, new_zcash_key_pair_1.pk, new_zcash_key_pair_2.pk, userID, weight)
+                let voted = await social_graph.vote(register.coin, old_zcash_address, new_zcash_key_pair_1.pk, new_zcash_key_pair_2.pk, userID, weight)
                 
                 expect(social_graph.voting_tree.indexOf(voted.tx_pour.new_cm_1)).toBe(voted.voting_pos)
                 expect(social_graph.vote_nullifiers[social_graph.vote_nullifiers.length-1]).toBe(voted.tx_pour.sn_old)
@@ -135,9 +135,9 @@ describe("Core tests", () => {
             expect(social_graph.voting_tree.indexOf(reg.tx_mint.cm)).toBe(reg.pos)
 
             expect(social_graph.candidates[userID].status).toBe("Verified")
-        })
+        }, 960 * 1000)
 
-        it("Should allow users to claim back their voting power and their rewards", () => {
+        it("Should allow users to claim back their voting power and their rewards", async () => {
             const social_graph = new PrivateGraph()
             // user to become verified
             const userID = social_graph.registerCandidate("Jim", 10)
@@ -157,7 +157,7 @@ describe("Core tests", () => {
 
                 addrs_2.push(new_zcash_key_pair_2)
 
-                let voted = social_graph.vote(register.coin, old_zcash_address, new_zcash_key_pair_1.pk, new_zcash_key_pair_2.pk, userID, weight)
+                let voted = await social_graph.vote(register.coin, old_zcash_address, new_zcash_key_pair_1.pk, new_zcash_key_pair_2.pk, userID, weight)
                 
                 votes.push(voted)
                 
@@ -181,7 +181,7 @@ describe("Core tests", () => {
             const new_zcash_key_pair_1 = social_graph.create_address()
             const new_zcash_key_pair_2 = social_graph.create_address()
 
-            const claim_rewards = social_graph.claim(old_coin, old_address, new_zcash_key_pair_1.pk, new_zcash_key_pair_2.pk, userID, 10)
+            const claim_rewards = await social_graph.claim(old_coin, old_address, new_zcash_key_pair_1.pk, new_zcash_key_pair_2.pk, userID, 10)
 
             expect(social_graph.voting_tree.indexOf(claim_rewards.coin_1.cm)).toBe(claim_rewards.voting_pos)
             expect(social_graph.rewards_tree.indexOf(claim_rewards.coin_2.cm)).toBe(claim_rewards.reward_pos)
@@ -189,9 +189,9 @@ describe("Core tests", () => {
             expect(claim_rewards.coin_2.value).toBe(
                 Math.floor(old_coin.value * social_graph.C / social_graph.rewards[social_graph.candidates[userID].epochV].sum)
             )
-        })
+        }, 960 * 1000)
 
-        it("Should penalise a userID by removing all votes", () => {
+        it("Should penalise a userID by removing all votes", async () => {
             const social_graph = new PrivateGraph()
             const userID = social_graph.registerCandidate("Jim", 10)
 
@@ -210,7 +210,7 @@ describe("Core tests", () => {
 
             const weight = 50
 
-            const voted = social_graph.vote(register.coin, old_zcash_address, new_zcash_key_pair_1.pk, new_zcash_key_pair_2.pk, userID, weight)
+            const voted = await social_graph.vote(register.coin, old_zcash_address, new_zcash_key_pair_1.pk, new_zcash_key_pair_2.pk, userID, weight)
 
             // check userID has 1 vote
             expect(social_graph.voting_tree.indexOf(voted.tx_pour.new_cm_1)).toBe(voted.voting_pos)
@@ -225,6 +225,6 @@ describe("Core tests", () => {
             expect(social_graph.candidates[userID].v_in).toBe(0)
             expect(social_graph.candidates[userID].votes).toBe(0)
             expect(social_graph.candidates[userID].get_numLeaves()).toBe(0)
-        })
+        }, 960 * 1000)
     })
 })

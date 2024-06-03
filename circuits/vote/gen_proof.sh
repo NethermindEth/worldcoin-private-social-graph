@@ -1,12 +1,10 @@
 #!/usr/bin/bash
 
+cd circuits/vote
+
 # generate proof
-echo "generating proof..."
+echo "generating vote proof..."
 nargo prove
 
 echo "proof generated!"
 
-echo "verifying proof..."
-# verify proof
-nargo verify
-echo "proof verified!"

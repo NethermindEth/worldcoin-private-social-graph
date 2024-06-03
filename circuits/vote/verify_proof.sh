@@ -1,5 +1,6 @@
 #!/usr/bin/bash
 
-echo "verifying proof..."
+cd circuits/vote
+echo "verifying vote proof..."
 nargo verify
 echo "proof verified!"

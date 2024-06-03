@@ -100,12 +100,12 @@ export class PrivateGraph {
      * 
      * @description consume old coin to create a new one in voting tree and candidate tree
      */
-    public vote(old_coin: Coin, old_address: Address, new_pk_address_1: bigint, new_pk_address_2: bigint, userID: number, weight: number) : Voting {
+    public async vote(old_coin: Coin, old_address: Address, new_pk_address_1: bigint, new_pk_address_2: bigint, userID: number, weight: number) : Promise<Voting> {
         if (weight < 0) {
             throw new Error("weight must be non-negative")
         }
         // generate pour transaction
-        const Pour = pour(
+        const Pour = await pour(
             this.voting_tree.root,
             old_coin,
             old_address.sk,
@@ -214,7 +214,7 @@ export class PrivateGraph {
      * 
      * @description Claims back a fraction of the voting power allocated to the Verified Candidate and its rewards
      */
-    public claim(old_coin: Coin, old_address: Address, new_pk_address_1: bigint, new_pk_address_2: bigint, userID: number, curr_epoch: number) : claimed {
+    public async claim(old_coin: Coin, old_address: Address, new_pk_address_1: bigint, new_pk_address_2: bigint, userID: number, curr_epoch: number) : Promise<claimed> {
         // checks candidate is verified
         if (this.candidates[userID].status != "Verified") {
             throw new Error("Candidate not verified yet")
@@ -239,7 +239,7 @@ export class PrivateGraph {
 
         const candidate_tree = this.candidates[userID].candidateTree
 
-        const Pour = pour(
+        const Pour = await pour(
             candidate_tree.root,
             old_coin,
             old_address.sk,

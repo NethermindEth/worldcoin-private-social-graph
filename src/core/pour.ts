@@ -2,7 +2,8 @@ import { poseidon1, poseidon2, poseidon3, poseidon4 } from "poseidon-lite";
 import { ECDSA_address, Coin, Tx_Pour, Pour, modulus } from "./structs";
 import { Tree } from "./tree";
 import { IMTMerkleProof } from "@zk-kit/imt"
-import { writeFileSync } from "fs";
+import { writeFileSync } from "fs"
+import { exec } from "child_process";
 import { ec } from "elliptic"
 const EC = new ec('secp256k1')
 
@@ -22,7 +23,7 @@ const EC = new ec('secp256k1')
  * 
  * @description will spend the old coin and create two new coins who's summed value equal to the old coins original value
  */
-export function pour(
+export async function pour(
     rt: bigint,
     old_coin: Coin,
     old_sk: bigint,
@@ -34,7 +35,7 @@ export function pour(
     new_pk_address_2: bigint,
     v_pub: number[],
     info: string
-) : Pour {
+) : Promise<Pour> {
     // generate old serial number
     const sn_old = poseidon3([old_sk,1,old_coin.seed]) // following zcash serial number PRF
 
@@ -83,11 +84,9 @@ export function pour(
     // hash of signature with old address secret key
     const h = poseidon4([old_sk, 2, 0, h_sig]) // padding taken from zcash doc
 
-    // TODO: call Noir pour circuit
+    // call Noir pour circuit
     if (v_pub.length == 3) {
         // call claim pour
-        // TODO: write in circuits/claimPour/Prover.toml the values
-
         const claim_path = "circuits/claimPour/Prover.toml"
 
         let pathIndicesString = "["
@@ -133,9 +132,53 @@ export function pour(
 
         writeFileSync(claim_path, inputs)
 
-        // TODO: call `nargo prove`
+        await runCommand('./circuits/claimPour/gen_proof.sh')
     } else {
         // call vote pour
+        const vote_path = "circuits/vote/Prover.toml"
+
+        let pathIndicesString = "["
+        let siblingsString = "["
+
+        for (var i = 0; i < 64 ; i++) {
+            pathIndicesString += "\"" + path.pathIndices[i] + "\","
+            siblingsString += "\"" + path.siblings[i] + "\","
+        }
+
+        pathIndicesString += "]"
+        siblingsString += "]"
+
+        const inputs = "h=\"" + h + "\"\n" + 
+        "h_sig=\"" + h_sig + "\"\n" + 
+        "indices=" + pathIndicesString + "\n" + 
+        "new_cm_1=\"" + new_cm_1 + "\"\n" + 
+        "new_cm_2=\"" + new_cm_2 + "\"\n" + 
+        "new_coin_1_commitment=\"" + coin_1.cm + "\"\n" + 
+        "new_coin_1_nullifier_seed=\"" + coin_1.seed + "\"\n" + 
+        "new_coin_1_pk_address=\"" + coin_1.public_key + "\"\n" + 
+        "new_coin_1_r=\"" + coin_1.r + "\"\n" + 
+        "new_coin_1_value=\"" + coin_1.value + "\"\n" + 
+        "new_coin_2_commitment=\"" + coin_2.cm + "\"\n" + 
+        "new_coin_2_nullifier_seed=\"" + coin_2.seed + "\"\n" + 
+        "new_coin_2_pk_address=\"" + coin_2.public_key + "\"\n" + 
+        "new_coin_2_r=\"" + coin_2.r + "\"\n" + 
+        "new_coin_2_value=\"" + coin_2.value + "\"\n" + 
+        "old_coin_commitment=\"" + old_coin.cm + "\"\n" + 
+        "old_coin_nullifier_seed=\"" + old_coin.seed + "\"\n" + 
+        "old_coin_pk_address=\"" + old_coin.public_key + "\"\n" + 
+        "old_coin_r=\"" + old_coin.r + "\"\n" + 
+        "old_coin_value=\"" + old_coin.value + "\"\n" + 
+        "old_sk=\"" + old_sk + "\"\n" + 
+        "old_sn=\"" + sn_old + "\"\n" + 
+        "root=\"" + rt + "\"\n" + 
+        "siblings=" + siblingsString + "\n" + 
+        "v_pub=" + v_pub[0].toString() + "\n";
+
+        // console.log(inputs)
+
+        writeFileSync(vote_path, inputs)
+
+        await runCommand('./circuits/vote/gen_proof.sh')
     }
     const pour_instance: any = []
     const proof: any[] = []
@@ -194,12 +237,12 @@ export function pour(
  * 
  * @description checks the nullifiers, roots and correctness of the pour tx
  */
-export function verifyPour(
+export async function verifyPour(
     tree: Tree,
     pour: Pour,
     vote_nullifiers: bigint[],
     old_sk: bigint
-) : boolean {
+) : Promise<boolean> {
     // check sn_old is not part of old nullifiers
     if(vote_nullifiers.includes(pour.tx_pour.sn_old)) {
         return false
@@ -216,7 +259,6 @@ export function verifyPour(
         return false
     }
 
-    // TODO: verify signature: fix issue that signatures wont match if they have been forced to lower value
     // verify signature
     const pour_instance: any = []
     
@@ -239,7 +281,38 @@ export function verifyPour(
         }
     }
 
-    // TODO: verify circuit proof
     // verify circuit proof
-    return true
+    if (pour.tx_pour.v_pub.length == 3) {
+        await runCommand('./circuits/claimPour/verify_proof.sh')
+    } else {
+        await runCommand('./circuits/vote/verify_proof.sh')
+    }
+    return true 
 } 
+
+// Utility function to promisify exec
+const execAsync = (command: string): Promise<{ stdout: string, stderr: string }> => {
+    return new Promise((resolve, reject) => {
+        exec(command, (error, stdout, stderr) => {
+            if (error) {
+                reject({ error, stderr });
+            } else {
+                resolve({ stdout, stderr });
+            }
+        });
+    });
+};
+
+// Example function that uses the execAsync function
+const runCommand = async (command: string): Promise<void> => {
+    try {
+        const { stdout, stderr } = await execAsync(command);
+        console.log('stdout:', stdout);
+        if (stderr != "") {
+            console.log('stderr:', stderr);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+    }
+};
+

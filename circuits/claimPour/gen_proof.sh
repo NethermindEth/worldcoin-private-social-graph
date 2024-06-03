@@ -1,12 +1,10 @@
 #!/usr/bin/bash
 
+cd circuits/claimPour
+
 # generate proof
-echo "generating proof..."
+echo "generating claim proof..."
 nargo prove
 
 echo "proof generated!"
 
-echo "verifying proof..."
-# verify proof
-nargo verify
-echo "proof verified!"
