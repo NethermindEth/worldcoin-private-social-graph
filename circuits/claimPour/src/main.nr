@@ -33,6 +33,30 @@ fn main(
     new_coin_2_commitment: Field,
 
 ) {
-    assert(claim_pour(root, old_sn, new_cm_1, new_cm_2, v_pub, h_sig, h, siblings, indices, old_coin_pk_address, old_coin_value, old_coin_nullifier_seed, old_coin_r, old_coin_commitment,old_sk, new_coin_1_pk_address, new_coin_1_value, new_coin_1_nullifier_seed, new_coin_1_r,new_coin_1_commitment,new_coin_2_pk_address,new_coin_2_value,new_coin_2_nullifier_seed,new_coin_2_r,new_coin_2_commitment) == true);
+    assert(claim_pour(
+        root,
+        old_sn, 
+        new_cm_1, 
+        new_cm_2, 
+        v_pub, h_sig, 
+        h, siblings, 
+        indices, 
+        old_coin_pk_address, 
+        old_coin_value, 
+        old_coin_nullifier_seed, 
+        old_coin_r, 
+        old_coin_commitment,
+        old_sk, 
+        new_coin_1_pk_address, 
+        new_coin_1_value, 
+        new_coin_1_nullifier_seed, 
+        new_coin_1_r,
+        new_coin_1_commitment,
+        new_coin_2_pk_address,
+        new_coin_2_value,
+        new_coin_2_nullifier_seed,
+        new_coin_2_r,
+        new_coin_2_commitment
+        ) == true
+    );
 }
-
