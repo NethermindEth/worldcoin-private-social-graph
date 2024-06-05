@@ -48,7 +48,7 @@ contract Voting is SocialGraph{
         userAddress[id++] = msg.sender;
     }
 
-    function verifyMint(Mint calldata tx_mint) public returns(bool){
+    function verifyMint(Mint calldata tx_mint) public pure returns(bool){
         if(tx_mint.commitment == PoseidonT3.hash([tx_mint.value,tx_mint.k]))
             return true;
         else return false;
@@ -115,7 +115,6 @@ contract Voting is SocialGraph{
         require(users[msg.sender].isRegistered, "You are not yet registered");
         require(users[msg.sender].status == 2, "You need to be a candidate in order to call this function");
         require(users[msg.sender].v_in >= x);
-        uint y = 100*(1 - inversePower(users[msg.sender].v_in/2));
         require(verifyMint(tx_mint));
         uint256 new_root = BinaryIMT.insert(VotingTree, tx_mint.commitment);
         voteMerkleRoot.push(new_root);
