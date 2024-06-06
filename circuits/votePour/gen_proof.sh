@@ -1,6 +1,6 @@
 #!/usr/bin/bash
 
-cd circuits/vote
+cd circuits/votePour
 
 # generate proof
 echo "generating vote proof..."

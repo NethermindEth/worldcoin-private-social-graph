@@ -63,11 +63,11 @@ contract SocialGraph {
         uint256 sn_old;
         uint256 cm_1;
         uint256 cm_2;
-        uint256 v_pub;
+        uint256[] v_pub;
         string info;
-        uint256 pk_sig;
-        uint256 h_1;
-        // pour proof as well: once noir circuits are written we will know what it looks like
-        uint256 sig;
+        bytes32 pk_sig;
+        uint256 h;
+        bytes proof;
+        bytes32 sig;
     }
 }

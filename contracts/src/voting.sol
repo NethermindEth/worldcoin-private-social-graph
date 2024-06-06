@@ -4,21 +4,28 @@ pragma solidity ^0.8.13;
 import { Contract } from "./Contract.sol";
 import { SocialGraph } from "./social_graph.sol";
 import "poseidon-solidity/PoseidonT3.sol";
+import "poseidon-solidity/PoseidonT2.sol";
 // import "https://github.com/abdk-consulting/abdk-libraries-solidity/blob/master/ABDKMath64x64.sol";
 // import {BinaryIMT, BinaryIMTData} from "https://github.com/privacy-scaling-explorations/zk-kit.solidity/blob/main/packages/imt/contracts/BinaryIMT.sol";
 import "../../node_modules/abdk-libraries-solidity/ABDKMath64x64.sol";
 import {BinaryIMT, BinaryIMTData} from "../../node_modules/@zk-kit/imt.sol/BinaryIMT.sol";
+import '../../circuits/votePour/contract/votePour/plonk_vk.sol' as voteCircuit;
+import '../../circuits/claimPour/contract/claimPour/plonk_vk.sol' as claimCircuit;
 
 contract Voting is SocialGraph{
     Contract worldIDVerificationContract;
+    claimCircuit.UltraVerifier claimVerifier;
+    voteCircuit.UltraVerifier voteVerifier;
     
-    constructor(Contract _worldIDVerificationContract) {
+    constructor(Contract _worldIDVerificationContract, address _voteVerifier, address _claimVerifier) {
         // setup worldID verification
         worldIDVerificationContract = _worldIDVerificationContract;
         // setup tree and initialise with default zeros and push init root to history
         BinaryIMT.initWithDefaultZeroes(VotingTree, depth);
         BinaryIMT.initWithDefaultZeroes(RewardsTree, depth);
         voteMerkleRoot.push(VotingTree.root);   
+        voteVerifier = voteCircuit.UltraVerifier(__voteVerifier);
+        claimVerifier = claimCircuit.UltraVerifier(_claimVerifier);
     }
 
     // Function to register an account as a World ID holder
@@ -77,18 +84,31 @@ contract Voting is SocialGraph{
             users[userAddress[uid]].numberOfVotes += 1;
     }
 
-    function verify_pour(Pour calldata tx_pour) public returns(bool){
+    function verify_pour(Pour calldata tx_pour) public view returns(bool) {
         if(voteNullifiersExists[tx_pour.sn_old]) {
             return false;
         } else if(!voteMerkleRootExists[tx_pour.rt]) {
             return false;
         }
         // compute h_sig = poseidon(pk_sig)
-        uint256 h_sig = PoseidonT3.hash([tx_pour.pk_sig]);
+        uint256 h_sig = PoseidonT2.hash([tx_pour.pk_sig]);
 
-        // Verify pour proof
-        // Verify message and signature against pk_sig
-        //TODO
+        // Verify pour circuit proof
+        bytes32[] memory publicInputs = new bytes32[](7);
+        publicInputs[0] = bytes32(tx_pour.rt);
+        publicInputs[1] = bytes32(tx_pour.sn_old);
+        publicInputs[2] = bytes32(tx_pour.cm_1);
+        publicInputs[3] = bytes32(tx_pour.cm_2);
+        publicInputs[4] = bytes32(tx_pour.v_pub);
+        publicInputs[5] = bytes32(h_sig);
+        publicInputs[6] = bytes32(tx_pour.h);
+
+        if(tx_pour.v_pub.length == 3) {
+            require(claimVerifier.verify(tx_pour.proof, publicInputs), "Invalid proof");
+        } else {
+            require(voteVerifier.verify(tx_pour.proof, publicInputs), "Invalid proof");
+        }
+        return true;
     }
 
     function inversePower(uint256 input) public pure returns (uint) {
