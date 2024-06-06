@@ -19,7 +19,6 @@ describe("Integration Tests", () => {
         expect(pass).toBe(true)
     }, 1920 * 1000)
 
-    // TODO: Testing for vote circuit
     it("Should verify a valid vote transaction", async () => {
         const social_graph = new PrivateGraph()
         const userID = social_graph.registerCandidate("Jim", 1)

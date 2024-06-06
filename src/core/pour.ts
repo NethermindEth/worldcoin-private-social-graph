@@ -2,7 +2,7 @@ import { poseidon1, poseidon2, poseidon3, poseidon4 } from "poseidon-lite";
 import { ECDSA_address, Coin, Tx_Pour, Pour, modulus } from "./structs";
 import { Tree } from "./tree";
 import { IMTMerkleProof } from "@zk-kit/imt"
-import { writeFileSync } from "fs"
+import { writeFileSync, readFileSync } from "fs"
 import { exec } from "child_process";
 import { ec } from "elliptic"
 const EC = new ec('secp256k1')
@@ -84,6 +84,10 @@ export async function pour(
     // hash of signature with old address secret key
     const h = poseidon4([old_sk, 2, 0, h_sig]) // padding taken from zcash doc
 
+    // TODO: HAVE THIS READ THE PROOF FROM CIRCUITS
+    let pour_instance: any[] = []
+    let proof = ""
+
     // call Noir pour circuit
     if (v_pub.length == 3) {
         // call claim pour
@@ -133,9 +137,14 @@ export async function pour(
         writeFileSync(claim_path, inputs)
 
         await runCommand('./circuits/claimPour/gen_proof.sh')
+
+        // TODO: HAVE THIS READ THE PROOF FROM CIRCUITS
+        const claim_proof_path = "circuits/claimPour/proofs/claimPour.proof"
+        pour_instance = [rt, sn_old, new_cm_1, new_cm_2, v_pub, h_sig, h]
+        proof = readFileSync(claim_proof_path, 'utf-8')
     } else {
         // call vote pour
-        const vote_path = "circuits/vote/Prover.toml"
+        const vote_path = "circuits/votePour/Prover.toml"
 
         let pathIndicesString = "["
         let siblingsString = "["
@@ -178,10 +187,15 @@ export async function pour(
 
         writeFileSync(vote_path, inputs)
 
-        await runCommand('./circuits/vote/gen_proof.sh')
+        await runCommand('./circuits/votePour/gen_proof.sh')
+
+        // TODO: HAVE THIS READ THE PROOF FROM CIRCUITS
+        const vote_proof_path = "circuits/votePour/proofs/votePour.proof"
+        pour_instance = [rt, sn_old, new_cm_1, new_cm_2, v_pub, h_sig, h]
+        proof = readFileSync(vote_proof_path, 'utf-8')
     }
-    const pour_instance: any = []
-    const proof: any[] = []
+
+    // console.log(proof)
 
     // Sign message
     let msg: any = [pour_instance, proof, info]
@@ -285,7 +299,7 @@ export async function verifyPour(
     if (pour.tx_pour.v_pub.length == 3) {
         await runCommand('./circuits/claimPour/verify_proof.sh')
     } else {
-        await runCommand('./circuits/vote/verify_proof.sh')
+        await runCommand('./circuits/votePour/verify_proof.sh')
     }
     return true 
 } 

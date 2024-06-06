@@ -196,7 +196,7 @@ export type Tx_Pour = {
     info: string // arbitrary string
     key: ECDSA_address // one time signature public key
     h: bigint // hash of signature pk
-    proof: any[] // noir proof
+    proof: string // noir proof
     signature: ec.Signature // signature of public instances, proof and info
 }
 
