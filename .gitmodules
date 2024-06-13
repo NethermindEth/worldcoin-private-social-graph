@@ -7,3 +7,6 @@
 [submodule "contracts/lib/abdk-libraries-solidity"]
 	path = contracts/lib/abdk-libraries-solidity
 	url = https://github.com/abdk-consulting/abdk-libraries-solidity
+[submodule "contracts/lib/poseidon-solidity"]
+	path = contracts/lib/poseidon-solidity
+	url = https://github.com/vimwitch/poseidon-solidity
