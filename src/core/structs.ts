@@ -1,6 +1,7 @@
 import { BNInput, ec, SignatureInput } from "elliptic"
 const EC = new ec('secp256k1')
 import { Tree } from "./tree"
+import { getRandomValues } from "crypto"
 
 export type Coin = {
     public_key: bigint // address pk
@@ -239,4 +240,10 @@ export type claimed = {
     coin_2: Coin
 }
 
-export const modulus = Number("21888242871839275222246405745257275088548364400416034343698204186575808495617")
+export const modulus = BigInt("21888242871839275222246405745257275088548364400416034343698204186575808495617")
+
+export function secureRandom(max: bigint): bigint {
+    const array = new Uint32Array(1);
+    getRandomValues(array);
+    return (BigInt(array[0]) % (max + BigInt(1)));
+}

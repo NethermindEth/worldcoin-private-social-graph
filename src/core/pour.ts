@@ -1,5 +1,5 @@
 import { poseidon1, poseidon2, poseidon3, poseidon4 } from "poseidon-lite";
-import { ECDSA_address, Coin, Tx_Pour, Pour, modulus } from "./structs";
+import { ECDSA_address, Coin, Tx_Pour, Pour, modulus, secureRandom } from "./structs";
 import { Tree } from "./tree";
 import { IMTMerkleProof } from "@zk-kit/imt"
 import { writeFileSync, readFileSync } from "fs"
@@ -41,10 +41,10 @@ export async function pour(
 
     // Compute coin 1:
     // sample nullifier seed
-    const seed_1 = BigInt(Math.random() * modulus)
+    const seed_1 = secureRandom(modulus)
     // sample trapdoors
-    let r_1 = BigInt(Math.random() * modulus)
-    let s_1 = BigInt(Math.random() * modulus)
+    let r_1 = secureRandom(modulus)
+    let s_1 = secureRandom(modulus)
     // compute 2-step commitment
     const new_k_1 = poseidon2([r_1, poseidon2([new_pk_address_1, seed_1])])
     const new_cm_1 = poseidon3([new_k_1, 0, v_1])
@@ -59,10 +59,10 @@ export async function pour(
 
     // Compute coin 2:
     // sample nullifier seed
-    const seed_2 = BigInt(Math.random() * modulus)
+    const seed_2 = secureRandom(modulus)
     // sample trapdoors
-    let r_2 = BigInt(Math.random() * modulus)
-    let s_2 = BigInt(Math.random() * modulus)
+    let r_2 = secureRandom(modulus)
+    let s_2 = secureRandom(modulus)
     // compute 2-step commitment
     const new_k_2 = poseidon2([r_2, poseidon2([new_pk_address_2, seed_2])])
     const new_cm_2 = poseidon3([new_k_2, 0, v_2])

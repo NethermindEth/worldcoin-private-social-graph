@@ -1,6 +1,6 @@
 import { mint, verifyMint } from "./mint";
 import { Tree } from "./tree";
-import { Coin, Candidate, Mint, Address, Register, Voting, RewardMap, claimed, modulus } from "./structs";
+import { Coin, Candidate, Mint, Address, Register, Voting, RewardMap, claimed, modulus, secureRandom } from "./structs";
 import { pour, verifyPour } from "./pour";
 import { poseidon2 } from "poseidon-lite";
 
@@ -38,7 +38,7 @@ export class PrivateGraph {
      * @description will produce a key pair like zcash by sampling a random number as the secret key and hashing it for the public key
      */
     public create_address() : Address {
-        const sk = BigInt(Math.random() * modulus) 
+        const sk = secureRandom(modulus)
         const pk = poseidon2([sk, 0])
         const addr: Address = {sk, pk}
         return addr
