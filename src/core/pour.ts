@@ -34,7 +34,7 @@ export async function pour(
     new_pk_address_1: bigint,
     new_pk_address_2: bigint,
     v_pub: number,
-    info: string
+    info: string,
     is_called_by_vote: boolean
 ) : Promise<Pour> {
     // generate old serial number

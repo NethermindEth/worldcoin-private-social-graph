@@ -63,8 +63,6 @@ describe("Integration Tests", () => {
 
         const old_coin_r = old_coin.r
 
-        const old_coin_s = old_coin.s
-
         const old_coin_commitment = old_coin.cm
 
         const old_sk = old_zcash_address.sk
@@ -77,8 +75,6 @@ describe("Integration Tests", () => {
 
         const new_coin_1_r = voted.coin_1.r
 
-        const new_coin_1_s = voted.coin_1.s
-
         const new_coin_1_commitment = voted.coin_1.cm
 
         const new_coin_2_pk_address = voted.coin_2.public_key
@@ -89,11 +85,9 @@ describe("Integration Tests", () => {
 
         const new_coin_2_r = voted.coin_2.r
 
-        const new_coin_2_s = voted.coin_2.s
-
         const new_coin_2_commitment = voted.coin_2.cm
 
-        expect(await vote_pour(root.toString(), old_sn.toString(), new_cm_1.toString(), new_cm_2.toString(), v_pub[0].toString(), h_sig.toString(), h.toString(), siblings.map(i => i.toString()), pathIndices.map(i => i.toString()), old_coin_pk_address.toString(), old_coin_value.toString(), old_coin_nullifier_seed.toString(), old_coin_r.toString(), old_coin_s.toString(), old_coin_commitment.toString(), old_sk.toString(), new_coin_1_pk_address.toString(), new_coin_1_value.toString(), new_coin_1_nullifier_seed.toString(), new_coin_1_r.toString(), new_coin_1_s.toString(), new_coin_1_commitment.toString(), new_coin_2_pk_address.toString(), new_coin_2_value.toString(), new_coin_2_nullifier_seed.toString(), new_coin_2_r.toString(), new_coin_2_s.toString(), new_coin_2_commitment.toString())).toBe(true)
+        expect(await vote_pour(root.toString(), old_sn.toString(), new_cm_1.toString(), new_cm_2.toString(), v_pub.toString(), h_sig.toString(), h.toString(), siblings.map(i => i.toString()), pathIndices.map(i => i.toString()), old_coin_pk_address.toString(), old_coin_value.toString(), old_coin_nullifier_seed.toString(), old_coin_r.toString(), old_coin_commitment.toString(), old_sk.toString(), new_coin_1_pk_address.toString(), new_coin_1_value.toString(), new_coin_1_nullifier_seed.toString(), new_coin_1_r.toString(), new_coin_1_commitment.toString(), new_coin_2_pk_address.toString(), new_coin_2_value.toString(), new_coin_2_nullifier_seed.toString(), new_coin_2_r.toString(), new_coin_2_commitment.toString())).toBe(true)
     }, 960 * 1000)
 
     it("Should verify a valid claim pour transaction", async () => {
@@ -160,8 +154,6 @@ describe("Integration Tests", () => {
 
         const old_coin_r = old_coin.r
 
-        const old_coin_s = old_coin.s
-
         const old_coin_commitment = old_coin.cm
 
         const old_sk = old_address.sk
@@ -174,8 +166,6 @@ describe("Integration Tests", () => {
 
         const new_coin_1_r = claim_rewards.coin_1.r
 
-        const new_coin_1_s = claim_rewards.coin_1.s
-
         const new_coin_1_commitment = claim_rewards.coin_1.cm
 
         const new_coin_2_pk_address = claim_rewards.coin_2.public_key
@@ -186,39 +176,8 @@ describe("Integration Tests", () => {
 
         const new_coin_2_r = claim_rewards.coin_2.r
 
-        const new_coin_2_s = claim_rewards.coin_2.s
-
         const new_coin_2_commitment = claim_rewards.coin_2.cm
 
-        // console.log("\n root: ", root.toString(), "\n",
-        //             "old_sn: ", old_sn.toString(), "\n",
-        //             "new_cm_1: ", new_cm_1.toString(), "\n",
-        //             "new_cm_2: ", new_cm_2.toString(), "\n",
-        //             "v_pub: ", v_pub.map(i => i.toString()), "\n",
-        //             "h_sig: ", h_sig.toString(), "\n",
-        //             "h: ", h.toString(), "\n",
-        //             "siblings: ", siblings.map(i => i.toString()), "\n",
-        //             "path indices: ", pathIndices.map(i => i.toString()), "\n",
-        //             "old coin pk address: ", old_coin_pk_address.toString(), "\n",
-        //             "old coin value: ", old_coin_value.toString(), "\n",
-        //             "old coin nullifier: ", old_coin_nullifier_seed.toString(), "\n",
-        //             "old coin r: ", old_coin_r.toString(), "\n",
-        //             "old coin s: ", old_coin_s.toString(), "\n",
-        //             "old coin commitment: ", old_coin_commitment.toString(), "\n",
-        //             "old sk: ", old_sk.toString(), "\n",
-        //             "new coin 1 pk address: ", new_coin_1_pk_address.toString(), "\n",
-        //             "new coin 1 value: ", new_coin_1_value.toString(), "\n",
-        //             "new coin 1 nullifier: ", new_coin_1_nullifier_seed.toString(), "\n",
-        //             "new coin 1 r: ", new_coin_1_r.toString(), "\n",
-        //             "new coin 1 s: ", new_coin_1_s.toString(), "\n",
-        //             "new coin 1 commitment: ", new_coin_1_commitment.toString(), "\n",
-        //             "new coin 2 pk address", new_coin_2_pk_address.toString(), "\n",
-        //             "new coin 2 value: ", new_coin_2_value.toString(), "\n",
-        //             "new coin 2 nullifier seed: ", new_coin_2_nullifier_seed.toString(), "\n",
-        //             "new coin 2 r: ", new_coin_2_r.toString(), "\n",
-        //             "new coin 2 s: ", new_coin_2_s.toString(), "\n",
-        //             "new coin 2 commitment: ", new_coin_2_commitment.toString())
-
-        expect(await claim_pour(root.toString(), old_sn.toString(), new_cm_1.toString(), new_cm_2.toString(), v_pub.map(i => i.toString()), h_sig.toString(), h.toString(), siblings.map(i => i.toString()), pathIndices.map(i => i.toString()), old_coin_pk_address.toString(), old_coin_value.toString(), old_coin_nullifier_seed.toString(), old_coin_r.toString(), old_coin_s.toString(), old_coin_commitment.toString(), old_sk.toString(), new_coin_1_pk_address.toString(), new_coin_1_value.toString(), new_coin_1_nullifier_seed.toString(), new_coin_1_r.toString(), new_coin_1_s.toString(), new_coin_1_commitment.toString(), new_coin_2_pk_address.toString(), new_coin_2_value.toString(), new_coin_2_nullifier_seed.toString(), new_coin_2_r.toString(), new_coin_2_s.toString(), new_coin_2_commitment.toString())).toBe(true)
+        expect(await claim_pour(root.toString(), old_sn.toString(), new_cm_1.toString(), new_cm_2.toString(), v_pub.toString(), h_sig.toString(), h.toString(), siblings.map(i => i.toString()), pathIndices.map(i => i.toString()), old_coin_pk_address.toString(), old_coin_value.toString(), old_coin_nullifier_seed.toString(), old_coin_r.toString(), old_coin_commitment.toString(), old_sk.toString(), new_coin_1_pk_address.toString(), new_coin_1_value.toString(), new_coin_1_nullifier_seed.toString(), new_coin_1_r.toString(), new_coin_1_commitment.toString(), new_coin_2_pk_address.toString(), new_coin_2_value.toString(), new_coin_2_nullifier_seed.toString(), new_coin_2_r.toString(), new_coin_2_commitment.toString())).toBe(true)
     }, 1920 * 1000)
 })

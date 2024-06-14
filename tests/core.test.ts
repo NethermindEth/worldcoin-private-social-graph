@@ -30,7 +30,7 @@ describe("Core tests", () => {
             const new_zcash_key_pair_1 = social_graph.create_address()
             const new_zcash_key_pair_2 = social_graph.create_address()
             
-            // call pour function
+            // call pour function (through vote)
             const p = await pour(
                 tree.root,
                 m.coin,
@@ -40,8 +40,9 @@ describe("Core tests", () => {
                 50,
                 new_zcash_key_pair_1.pk,
                 new_zcash_key_pair_2.pk,
-                [50],
-                "test"
+                50,
+                "test",
+                true
             )
 
             // Verify pour tx

@@ -114,8 +114,9 @@ export class PrivateGraph {
             weight,
             new_pk_address_1,
             new_pk_address_2,
-            [weight],
-            "vote"
+            weight,
+            "vote",
+            true
         )
 
         if(!verifyPour(this.voting_tree, Pour, this.vote_nullifiers, old_address.sk)){
@@ -248,8 +249,9 @@ export class PrivateGraph {
             h,
             new_pk_address_1,
             new_pk_address_2,
-            [this.alpha, this.C, sum],
-            "claim"
+            sum,
+            "claim",
+            false
         )
 
         if(!verifyPour(candidate_tree, Pour, this.vote_nullifiers, old_address.sk)){
