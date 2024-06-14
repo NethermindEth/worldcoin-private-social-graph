@@ -1,49 +1,55 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
-import { Contract } from "./Contract.sol";
-import {BinaryIMT, BinaryIMTData} from "https://github.com/privacy-scaling-explorations/zk-kit.solidity/blob/main/packages/imt/contracts/BinaryIMT.sol";
+import {Contract} from "./Contract.sol";
+import {BinaryIMT, BinaryIMTData} from "../lib/zk-kit.solidity/packages/imt/contracts/BinaryIMT.sol";
 
 contract SocialGraph {
+    uint256 depth = 64;
+    uint256 internal id = 1;
+    uint256 internal x = 600;
 
-    uint depth = 64;
-    uint internal id = 1;
-    uint internal x = 600;
-    struct User{
-        uint uid;
+    enum Status {
+        UNREGISTERED,
+        WORLD_ID_HOLDER,
+        CANDIDATE,
+        VERIFIED_IDENTITIY,
+        REJECTED
+    }
+
+    struct User {
+        uint256 uid;
         string name;
-        uint v_in;
-        uint epochV;
-        //1 - Verified identity, 2 - Candidate, 3 - Rejected
-        uint status;
-        uint numberOfVotes;
+        uint256 v_in;
+        uint256 epochV;
+        Status status;
+        uint256 numberOfVotes;
         bool isRegistered;
     }
 
     struct Rewards {
         // total number of voting power allocated to the candidates
-        uint sum;
+        uint256 sum;
         // total number of voting power claimed by the voters
-        uint claimed;
+        uint256 claimed;
     }
 
-    mapping (uint => Rewards) rewards_per_epoch;
-    
+    mapping(uint256 => Rewards) rewards_per_epoch;
+
     mapping(address => BinaryIMTData) candidateTrees;
     mapping(address => bool) candidateTreeNonEmpty;
     BinaryIMTData VotingTree;
     BinaryIMTData RewardsTree;
 
     mapping(address => uint256[]) userIDNullifiers;
-    mapping(address => uint) sizeOfUserIDNullifiers;
+    mapping(address => uint256) sizeOfUserIDNullifiers;
     uint256[] voteNullifiers;
     mapping(uint256 => bool) public voteNullifiersExists;
     uint256[] rewardsNullifiers;
 
     mapping(address => User) internal users;
-    mapping(uint => address) internal userAddress;
+    mapping(uint256 => address) internal userAddress;
 
-    
     mapping(address => uint256[]) userIDMerkleRoot;
     uint256[] voteMerkleRoot;
     mapping(uint256 => bool) voteMerkleRootExists;
@@ -63,7 +69,7 @@ contract SocialGraph {
         uint256 sn_old;
         uint256 cm_1;
         uint256 cm_2;
-        uint256[] v_pub;
+        uint256 v_pub;
         string info;
         bytes32 pk_sig;
         uint256 h;
