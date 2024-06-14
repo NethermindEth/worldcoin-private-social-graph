@@ -154,8 +154,15 @@ contract Voting is SocialGraph {
         }
     }
 
+    /**
+     * @notice Computes the inverse of the exponential function for a given input.
+     * @param input - The value for which the inverse exponential is to be calculated, represented as an integer percentage.
+     * @return The result of the inverse exponential calculation, scaled to keep 5 decimal places.
+     * @dev Use the ABDKMath64x64 library to perform fixed-point arithmetic operations. The input is first converted to a 
+     *      fixed-point percentage. The exponential of this percentage is calculated and then inverted.
+     */
     function inversePower(uint256 input) public pure returns (uint256) {
-        // Represent the percentage as a fixed-point number.
+        // Represent the percentage as a fixed-point number
         int128 percentage = ABDKMath64x64.divu(input, 100);
 
         // Calculate e^(percentage)
@@ -174,6 +181,12 @@ contract Voting is SocialGraph {
         return ABDKMath64x64.toUInt(result);
     }
 
+    /**
+     * @notice will update the user to verified and allow them to vote on future world ID members
+     * @param tx_mint - mint transaction of the candidate in the voting tree
+     * @dev will verify the user is eligible for this and if so will insert the tx commitment to the vote tree
+     *      and change the status from Candidate to verified identity
+     */
     function updateStatusVerified(Mint calldata tx_mint) public {
         require(users[msg.sender].isRegistered, "msg.sender not registered");
         require(users[msg.sender].status == Status.CANDIDATE, "msg.sender not candidate");
@@ -189,6 +202,13 @@ contract Voting is SocialGraph {
         emit CandidateVerified(msg.sender, Status.VERIFIED_IDENTITIY);
     }
 
+    /**
+     * @notice will provide the user with rewards and a portion of their voting power back
+     * @param uid - candidate user id that got updated to verified
+     * @param tx_pour - pour transaction minting 2 coins in the rewards & vote tree
+     * @dev will verify that the uID corresponds to a verified identity and if so will mint a coin in
+     *      the rewards tree and the voting tree of value equal porportional to the weight voted with
+     */
     function claimRewards(uint256 uid, Pour calldata tx_pour) public {
         //check userID is verified
         require(
@@ -226,6 +246,9 @@ contract Voting is SocialGraph {
         }
     }
 
+    /**
+     * @notice the penalise function that will delete the candidate tree in order to punish malicious voters
+     */
     function penalise() public {
         require(users[msg.sender].isRegistered, "msg.sender not registered");
         require(users[msg.sender].status == Status.CANDIDATE, "msg.sender not candidate");
