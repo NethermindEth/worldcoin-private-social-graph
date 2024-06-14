@@ -6,7 +6,7 @@ fn main(
     old_sn: pub Field,
     new_cm_1: pub Field,
     new_cm_2: pub Field,
-    v_pub: pub [Field; 3], // layout: [alpha, C, sum_i]
+    v_pub: pub Field,
     h_sig: pub Field,
     h: pub Field,
     // private witnesses

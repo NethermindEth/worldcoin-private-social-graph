@@ -80,6 +80,7 @@ pub fn vote_pour(
     assert(h == hash4([old_sk, 2, 0, h_sig]));
 
     // 6. check value is consistent between old and new coins
+    assert(v_pub.lt(old_coin_value));
     assert(new_coin_1_value == old_coin_value - v_pub);
     assert(new_coin_2_value == v_pub);
     true
@@ -92,7 +93,7 @@ pub fn claim_pour(
     old_sn: Field,
     new_cm_1: Field,
     new_cm_2: Field,
-    v_pub: [Field; 3], // layout: [alpha, C, sum_i]
+    v_pub: Field,
     h_sig: Field,
     h: Field,
     // private witnesses
@@ -118,16 +119,16 @@ pub fn claim_pour(
     new_coin_2_r: Field,
     new_coin_2_commitment: Field,
 ) -> bool {
-    // 1. check merkle proof
-    assert(verify_merkle_proof(old_coin_commitment, siblings, indices, root));
+    let C: u64 = 140000;
+    let alpha: Field = 60;
     
-    // 2. verify address => address public key = PRF(sk || 0)
+    // 1. verify address => address public key = PRF(sk || 0)
     assert(old_coin_pk_address == hash2([old_sk, 0]));
 
-    // 3. verify old serial number is computed correctly
+    // 2. verify old serial number is computed correctly
     assert(old_sn == hash3([old_sk, 1, old_coin_nullifier_seed]));
 
-    // 4. coins are well formed
+    // 3. coins are well formed
     // a. verify old commitment is computed correctly
     let hash_pk_null = hash2([old_coin_pk_address, old_coin_nullifier_seed]);
     let hash_r_pk_null = hash2([old_coin_r, hash_pk_null]);
@@ -145,13 +146,15 @@ pub fn claim_pour(
     assert(new_cm_2 == hash3([hash_r_pk_null, 0, new_coin_2_value])); 
     assert(new_cm_2 == new_coin_2_commitment);
 
-    // 5. check hash is correctly computed
-
+    // 4. check hash is correctly computed
     assert(h == hash4([old_sk, 2, 0, h_sig]));
 
-    // 6. check value is consistent between old and new coins
-    assert(new_coin_1_value == old_coin_value * v_pub[0]);
-    assert(new_coin_2_value as u64 == (old_coin_value as u64 * v_pub[1] as u64 / v_pub[2] as u64));
+    // 5. check value is consistent between old and new coins
+    assert(new_coin_1_value == old_coin_value * alpha);
+    assert(new_coin_2_value as u64 == (old_coin_value as u64 * C / v_pub as u64));
+
+    // 6. check merkle proof
+    assert(verify_merkle_proof(old_coin_commitment, siblings, indices, root));
     
     true
 }
@@ -293,7 +296,7 @@ fn test_claim_pour() {
         9752149237913994345145642101760332129281270977824059396392047034871970568444,
         19351746528389387645271812456151544963511310713496530575626138478447817088102,
         6239013589653206361253580924430260465083581055311658214039979926065955965271,
-        [60,140000,600],
+        600,
         7901794728931609131088934750315074784586499427818120649106420644116156921709,
         72135052485410666436990706735269366990684364938189589495508596308050885428,
         [

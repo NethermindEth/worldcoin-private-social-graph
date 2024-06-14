@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
-import {Contract} from "./Contract.sol";
-import {SocialGraph} from "./social_graph.sol";
+import {WorldcoinVerifier} from "./WorldcoinVerifier.sol";
+import {WorldcoinSocialGraphStorage} from "./WorldcoinSocialGraphStorage.sol";
 import {PoseidonT3} from "../lib/poseidon-solidity/contracts/PoseidonT3.sol";
 import {PoseidonT2} from "../lib/poseidon-solidity/contracts/PoseidonT2.sol";
 import {ABDKMath64x64} from "../lib/abdk-libraries-solidity/ABDKMath64x64.sol";
@@ -10,8 +10,8 @@ import {BinaryIMT, BinaryIMTData} from "../lib/zk-kit.solidity/packages/imt/cont
 import "../../circuits/votePour/contract/votePour/plonk_vk.sol" as voteCircuit;
 import "../../circuits/claimPour/contract/claimPour/plonk_vk.sol" as claimCircuit;
 
-contract Voting is SocialGraph {
-    Contract worldIDVerificationContract;
+contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
+    WorldcoinVerifier worldIDVerificationContract;
     claimCircuit.UltraVerifier claimVerifier;
     voteCircuit.UltraVerifier voteVerifier;
 
@@ -30,9 +30,9 @@ contract Voting is SocialGraph {
      * @param _voteVerifier - contract address of the vote circuit solidity verifier
      * @param _claimVerifier - contract address of the claim circuit solidity verifier
      */
-    constructor(Contract _worldIDVerificationContract, address _voteVerifier, address _claimVerifier) {
+    constructor(WorldcoinVerifier _worldcoinVerifier, address _voteVerifier, address _claimVerifier) {
         // setup worldID verification
-        worldIDVerificationContract = _worldIDVerificationContract;
+        worldIDVerificationContract = _worldcoinVerifier;
         // setup tree and initialise with default zeros and push init root to history
         BinaryIMT.initWithDefaultZeroes(VotingTree, depth);
         BinaryIMT.initWithDefaultZeroes(RewardsTree, depth);
@@ -74,18 +74,17 @@ contract Voting is SocialGraph {
      *      in the user map with status Candidate
      */
     function registerAsCandidate(string calldata _name) public {
-        require(!users[msg.sender].isRegistered, "msg.sender is already registered");
+        require(users[msg.sender].status == Status.UNREGISTERED, "msg.sender is already registered");
         require(!candidateTreeNonEmpty[msg.sender], "msg.sender tree already exists");
         BinaryIMT.initWithDefaultZeroes(candidateTrees[msg.sender], depth);
         candidateTreeNonEmpty[msg.sender] = true;
         // add user to user map
-        users[msg.sender] = User(id, _name, 0, 0, Status.CANDIDATE, 0, true);
-        userAddress[id++] = msg.sender;
+        users[msg.sender] = User(_name, 0, 0, Status.CANDIDATE, 0, true);
         emit UserRegistered(msg.sender, Status.CANDIDATE);
     }
 
     /**
-     * @notice Function to register an account as a Candidate
+     * @notice Function to verify a Mint transaction
      * @param tx_mint - mint tx used to signup a user to the vote tree
      */
     function verifyMint(Mint calldata tx_mint) public pure returns (bool) {
@@ -96,27 +95,24 @@ contract Voting is SocialGraph {
      * @notice Function to vote for a candidate
      * @param tx_pour - pour transaction of original coin into 2 new coins in candidate tree and vote tree
      * @param weight - weight to be voted for the candidate
-     * @param uid - userID of the candidate
+     * @param _user - address of the candidate
      * @dev will verify the pour transaction provided and if it passes will add the coin commitments to their
      *      respective trees and add the new roots to the root store
      */
-    function vote(Pour calldata tx_pour, uint256 weight, uint256 uid) public {
-        require(users[userAddress[uid]].status == Status.CANDIDATE, "User voted for not a candidate");
+    function recommendCandidate(Pour calldata tx_pour, uint256 weight, address _user) public {
+        require(users[_user].status == Status.CANDIDATE, "User voted for not a candidate");
         // check user has v_in + weight <= 10
-        require(
-            users[userAddress[uid]].v_in + weight <= 1000,
-            "Candidate exceeded maximum voting power, try with a lesser weight"
-        );
+        require(users[_user].v_in + weight <= 1000, "Candidate exceeded maximum voting power, try with a lesser weight");
         // verify pour tx
-        require(verify_pour(tx_pour, true), "pour tx failed to verify");
+        require(verifyPour(tx_pour, true), "pour tx failed to verify");
         voteNullifiers.push(tx_pour.sn_old);
         voteNullifiersExists[tx_pour.sn_old] = true;
         uint256 new_root = BinaryIMT.insert(VotingTree, tx_pour.cm_1);
         voteMerkleRoot.push(new_root);
         voteMerkleRootExists[new_root] = true;
-        userIDMerkleRoot[userAddress[uid]].push(BinaryIMT.insert(candidateTrees[userAddress[uid]], tx_pour.cm_2));
-        users[userAddress[uid]].v_in += weight;
-        users[userAddress[uid]].numberOfVotes++;
+        userIDMerkleRoot[_user].push(BinaryIMT.insert(candidateTrees[_user], tx_pour.cm_2));
+        users[_user].v_in += weight;
+        users[_user].numberOfVotes++;
     }
 
     /**
@@ -127,10 +123,8 @@ contract Voting is SocialGraph {
      * @dev will perform the following checks: nullifier has not been shown already, merkle root exists,
      *      finally circuit and zk proof are correct.
      */
-    function verify_pour(Pour calldata tx_pour, bool called_by_vote) public view returns (bool) {
-        if (voteNullifiersExists[tx_pour.sn_old]) {
-            return false;
-        } else if (!voteMerkleRootExists[tx_pour.rt]) {
+    function verifyPour(Pour calldata tx_pour, bool called_by_vote) public view returns (bool) {
+        if (voteNullifiersExists[tx_pour.sn_old] || !voteMerkleRootExists[tx_pour.rt]) {
             return false;
         }
         // compute h_sig = poseidon(pk_sig)
@@ -146,7 +140,6 @@ contract Voting is SocialGraph {
         publicInputs[5] = bytes32(h_sig);
         publicInputs[6] = bytes32(tx_pour.h);
 
-        // TODO: find new way to identify which tx this is
         if (!called_by_vote) {
             return (claimVerifier.verify(tx_pour.proof, publicInputs));
         } else {
@@ -158,7 +151,7 @@ contract Voting is SocialGraph {
      * @notice Computes the inverse of the exponential function for a given input.
      * @param input - The value for which the inverse exponential is to be calculated, represented as an integer percentage.
      * @return The result of the inverse exponential calculation, scaled to keep 5 decimal places.
-     * @dev Use the ABDKMath64x64 library to perform fixed-point arithmetic operations. The input is first converted to a 
+     * @dev Use the ABDKMath64x64 library to perform fixed-point arithmetic operations. The input is first converted to a
      *      fixed-point percentage. The exponential of this percentage is calculated and then inverted.
      */
     function inversePower(uint256 input) public pure returns (uint256) {
@@ -188,7 +181,7 @@ contract Voting is SocialGraph {
      *      and change the status from Candidate to verified identity
      */
     function updateStatusVerified(Mint calldata tx_mint) public {
-        require(users[msg.sender].isRegistered, "msg.sender not registered");
+        // msg.sender should be a candidate
         require(users[msg.sender].status == Status.CANDIDATE, "msg.sender not candidate");
         require(users[msg.sender].v_in >= x, "v_in lower than threshold to update status");
         require(verifyMint(tx_mint), "mint tx did not verify");
@@ -204,28 +197,26 @@ contract Voting is SocialGraph {
 
     /**
      * @notice will provide the user with rewards and a portion of their voting power back
-     * @param uid - candidate user id that got updated to verified
+     * @param _user - candidate user address that got updated to verified
      * @param tx_pour - pour transaction minting 2 coins in the rewards & vote tree
-     * @dev will verify that the uID corresponds to a verified identity and if so will mint a coin in
+     * @dev will verify that the _user corresponds to a verified identity and if so will mint a coin in
      *      the rewards tree and the voting tree of value equal porportional to the weight voted with
      */
-    function claimRewards(uint256 uid, Pour calldata tx_pour) public {
-        //check userID is verified
-        require(
-            users[userAddress[uid]].status == Status.VERIFIED_IDENTITIY, "user claiming rewards for must be verified"
-        );
+    function claimRewards(address _user, Pour calldata tx_pour) public {
+        //check user is verified
+        require(users[_user].status == Status.VERIFIED_IDENTITIY, "user claiming rewards for must be verified");
 
         //compute current epoch
         uint256 c_epoch = (block.number / 50064) + 1;
-        require(
-            c_epoch > users[userAddress[uid]].epochV, "user claiming rewards for verified epoch less than current epoch"
-        );
+        uint256 epoch = users[_user].epochV;
+        require(c_epoch > epoch, "user claiming rewards for verified epoch less than current epoch");
+        //check if public parameters are valid
+        require(tx_pour.v_pub == rewards_per_epoch[epoch].sum);
+        require(verifyPour(tx_pour, false), "pour tx failed to verify");
 
-        require(verify_pour(tx_pour, false), "pour tx failed to verify");
+        userIDNullifiers[_user].push(tx_pour.sn_old);
 
-        userIDNullifiers[userAddress[uid]].push(tx_pour.sn_old);
-
-        sizeOfUserIDNullifiers[userAddress[uid]]++;
+        sizeOfUserIDNullifiers[_user]++;
 
         uint256 new_root = BinaryIMT.insert(VotingTree, tx_pour.cm_1);
 
@@ -234,13 +225,13 @@ contract Voting is SocialGraph {
 
         rewardsMerkleRoot.push(BinaryIMT.insert(RewardsTree, tx_pour.cm_2));
 
-        if (sizeOfUserIDNullifiers[userAddress[uid]] == users[userAddress[uid]].numberOfVotes) {
-            delete(candidateTrees[userAddress[uid]]);
-            candidateTreeNonEmpty[userAddress[uid]] = false;
+        if (sizeOfUserIDNullifiers[_user] == users[_user].numberOfVotes) {
+            delete(candidateTrees[_user]);
+            candidateTreeNonEmpty[_user] = false;
         }
 
-        uint256 i = users[userAddress[uid]].epochV;
-        rewards_per_epoch[i].claimed += users[userAddress[uid]].v_in;
+        uint256 i = users[_user].epochV;
+        rewards_per_epoch[i].claimed += users[_user].v_in;
         if (rewards_per_epoch[i].sum == rewards_per_epoch[i].claimed) {
             delete(rewards_per_epoch[i]);
         }
@@ -250,7 +241,6 @@ contract Voting is SocialGraph {
      * @notice the penalise function that will delete the candidate tree in order to punish malicious voters
      */
     function penalise() public {
-        require(users[msg.sender].isRegistered, "msg.sender not registered");
         require(users[msg.sender].status == Status.CANDIDATE, "msg.sender not candidate");
 
         delete candidateTrees[msg.sender];

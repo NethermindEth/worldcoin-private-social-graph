@@ -193,7 +193,7 @@ export type Tx_Pour = {
     sn_old: bigint // serial number of coin being poured from
     new_cm_1: bigint // commitment of new coin in voting tree (value = old coin - weight) ||  (u * alpha)
     new_cm_2: bigint // commitment of new coin in candidate tree (value = weight) || u * C / sum_i
-    v_pub: number[] // public values to verify correct values of coins
+    v_pub: number // public values to verify correct values of coins
     info: string // arbitrary string
     key: ECDSA_address // one time signature public key
     h: bigint // hash of signature pk
@@ -208,6 +208,7 @@ export type Pour = {
     coin_2: Coin
     // the public pour transaction to be sent to the SC for verification
     tx_pour: Tx_Pour
+    is_called_by_vote: boolean
 }
 
 // Result of having voted

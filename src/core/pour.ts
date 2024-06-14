@@ -33,8 +33,9 @@ export async function pour(
     // generate new zcash address for each coin
     new_pk_address_1: bigint,
     new_pk_address_2: bigint,
-    v_pub: number[],
+    v_pub: number,
     info: string
+    is_called_by_vote: boolean
 ) : Promise<Pour> {
     // generate old serial number
     const sn_old = poseidon3([old_sk,1,old_coin.seed]) // following zcash serial number PRF
@@ -89,7 +90,7 @@ export async function pour(
     let proof = ""
 
     // call Noir pour circuit
-    if (v_pub.length == 3) {
+    if (!is_called_by_vote) {
         // call claim pour
         const claim_path = "circuits/claimPour/Prover.toml"
 
@@ -103,8 +104,6 @@ export async function pour(
 
         pathIndicesString += "]"
         siblingsString += "]"
-
-        const v_pub_string = "[" + "\"" + v_pub[0] + "\"," + "\"" + v_pub[1] + "\"," + "\"" + v_pub[2] + "\"]"
 
         const inputs = "h=\"" + h + "\"\n" + 
         "h_sig=\"" + h_sig + "\"\n" + 
@@ -130,15 +129,12 @@ export async function pour(
         "old_sn=\"" + sn_old + "\"\n" + 
         "root=\"" + rt + "\"\n" + 
         "siblings=" + siblingsString + "\n" + 
-        "v_pub=" + v_pub_string + "\n";
-
-        // console.log(inputs)
+        "v_pub=" + v_pub.toString() + "\n";
 
         writeFileSync(claim_path, inputs)
 
         await runCommand('./circuits/claimPour/gen_proof.sh')
 
-        // TODO: HAVE THIS READ THE PROOF FROM CIRCUITS
         const claim_proof_path = "circuits/claimPour/proofs/claimPour.proof"
         pour_instance = [rt, sn_old, new_cm_1, new_cm_2, v_pub, h_sig, h]
         proof = readFileSync(claim_proof_path, 'utf-8')
@@ -181,9 +177,7 @@ export async function pour(
         "old_sn=\"" + sn_old + "\"\n" + 
         "root=\"" + rt + "\"\n" + 
         "siblings=" + siblingsString + "\n" + 
-        "v_pub=" + v_pub[0].toString() + "\n";
-
-        // console.log(inputs)
+        "v_pub=" + v_pub.toString() + "\n";
 
         writeFileSync(vote_path, inputs)
 
@@ -194,8 +188,6 @@ export async function pour(
         pour_instance = [rt, sn_old, new_cm_1, new_cm_2, v_pub, h_sig, h]
         proof = readFileSync(vote_proof_path, 'utf-8')
     }
-
-    // console.log(proof)
 
     // Sign message
     let msg: any = [pour_instance, proof, info]
@@ -235,6 +227,7 @@ export async function pour(
             coin_1: coin_1, 
             coin_2: coin_2, 
             tx_pour: tx_pour,
+            is_called_by_vote: is_called_by_vote
         }
 
         return new_pour
@@ -296,7 +289,7 @@ export async function verifyPour(
     }
 
     // verify circuit proof
-    if (pour.tx_pour.v_pub.length == 3) {
+    if (!pour.is_called_by_vote) {
         await runCommand('./circuits/claimPour/verify_proof.sh')
     } else {
         await runCommand('./circuits/votePour/verify_proof.sh')

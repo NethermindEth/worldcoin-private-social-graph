@@ -1,12 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
-import {Contract} from "./Contract.sol";
 import {BinaryIMT, BinaryIMTData} from "../lib/zk-kit.solidity/packages/imt/contracts/BinaryIMT.sol";
 
-contract SocialGraph {
+contract WorldcoinSocialGraphStorage {
     uint256 depth = 64;
-    uint256 internal id = 1;
     uint256 internal x = 600;
 
     enum Status {
@@ -18,13 +16,11 @@ contract SocialGraph {
     }
 
     struct User {
-        uint256 uid;
         string name;
         uint256 v_in;
         uint256 epochV;
         Status status;
         uint256 numberOfVotes;
-        bool isRegistered;
     }
 
     struct Rewards {
@@ -48,7 +44,6 @@ contract SocialGraph {
     uint256[] rewardsNullifiers;
 
     mapping(address => User) internal users;
-    mapping(uint256 => address) internal userAddress;
 
     mapping(address => uint256[]) userIDMerkleRoot;
     uint256[] voteMerkleRoot;
