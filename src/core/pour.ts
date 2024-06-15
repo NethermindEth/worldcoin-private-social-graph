@@ -317,6 +317,7 @@ const runCommand = async (command: string): Promise<void> => {
         console.log('stdout:', stdout);
         if (stderr != "") {
             console.log('stderr:', stderr);
+            throw new Error(stderr)
         }
     } catch (error) {
         console.error('Error:', error);

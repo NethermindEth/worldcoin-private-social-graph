@@ -26,7 +26,7 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
 
     /**
      * @notice sets the state contracts used for verification of world ID and zk circuits
-     * @param _worldIDVerificationContract - contract address of the world ID verification
+     * @param _worldcoinVerifier - contract address of the world ID verification
      * @param _voteVerifier - contract address of the vote circuit solidity verifier
      * @param _claimVerifier - contract address of the claim circuit solidity verifier
      */
@@ -79,7 +79,7 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
         BinaryIMT.initWithDefaultZeroes(candidateTrees[msg.sender], depth);
         candidateTreeNonEmpty[msg.sender] = true;
         // add user to user map
-        users[msg.sender] = User(_name, 0, 0, Status.CANDIDATE, 0, true);
+        users[msg.sender] = User(_name, 0, 0, Status.CANDIDATE, 0);
         emit UserRegistered(msg.sender, Status.CANDIDATE);
     }
 
