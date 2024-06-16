@@ -17,7 +17,8 @@ describe("Core tests", () => {
             expect(verifyMint(m.tx_mint.cm, m.coin.value, m.tx_mint.k)).toBe(true)
         })
 
-        it("Should correctly pour an old coin into 2 new ones", async () => { // will fail if the signature has been changed
+        it("Should correctly pour an old coin into 2 new ones", async function () {
+            
             // mint a new coin and construct the tx
             const m = mint(zcash_key_pair.pk, 100)
 
@@ -52,7 +53,7 @@ describe("Core tests", () => {
                 social_graph.vote_nullifiers,
                 zcash_key_pair.sk
             )).toBe(true)            
-        }, 960 * 1000)
+        })
     })
 
     // Testing private graph class
@@ -84,7 +85,8 @@ describe("Core tests", () => {
             expect(new_candidate.cmp(new Candidate(userID+1, "Jim", 10))).toBe(true)
         })
 
-        it("Should allow users with coins to vote", async () => {
+        it("Should allow users with coins to vote", async function () {
+            
             const social_graph = new PrivateGraph()
             const userID = social_graph.registerCandidate("Jim", 1)
 
@@ -104,9 +106,10 @@ describe("Core tests", () => {
             expect(social_graph.candidates[userID].v_in).toBe(weight)
             expect(social_graph.candidates[userID].votes).toBe(1)
             expect(social_graph.candidates[userID].candidateTree.indexOf(voted.tx_pour.new_cm_2)).toBe(voted.userID_pos)
-        }, 960 * 1000)
+        })
         
-        it("Should allow a candidate to become verified if enough users vote for it", async () => {
+        it("Should allow a candidate to become verified if enough users vote for it", async function () {
+            
             const social_graph = new PrivateGraph()
             // user to become verified
             const userID = social_graph.registerCandidate("Jim", 10)
@@ -136,9 +139,10 @@ describe("Core tests", () => {
             expect(social_graph.voting_tree.indexOf(reg.tx_mint.cm)).toBe(reg.pos)
 
             expect(social_graph.candidates[userID].status).toBe("Verified")
-        }, 960 * 1000)
+        })
 
-        it("Should allow users to claim back their voting power and their rewards", async () => {
+        it("Should allow users to claim back their voting power and their rewards", async function () {
+            
             const social_graph = new PrivateGraph()
             // user to become verified
             const userID = social_graph.registerCandidate("Jim", 10)
@@ -190,9 +194,9 @@ describe("Core tests", () => {
             expect(claim_rewards.coin_2.value).toBe(
                 Math.floor(old_coin.value * social_graph.C / social_graph.rewards[social_graph.candidates[userID].epochV].sum)
             )
-        }, 960 * 1000)
+        })
 
-        it("Should penalise a userID by removing all votes", async () => {
+        it("Should penalise a userID by removing all votes", async function () {
             const social_graph = new PrivateGraph()
             const userID = social_graph.registerCandidate("Jim", 10)
 
@@ -226,6 +230,6 @@ describe("Core tests", () => {
             expect(social_graph.candidates[userID].v_in).toBe(0)
             expect(social_graph.candidates[userID].votes).toBe(0)
             expect(social_graph.candidates[userID].get_numLeaves()).toBe(0)
-        }, 960 * 1000)
+        })
     })
 })

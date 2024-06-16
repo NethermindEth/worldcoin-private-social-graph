@@ -3,8 +3,8 @@ import { verify_merkle_proof, claim_pour, vote_pour } from "../codegen";
 import { PrivateGraph } from "../src/core/private-graph";
 import { poseidon1 } from "poseidon-lite";
 
-describe("Integration Tests", () => {
-    it("Should verify a merkle proof", async () => {
+describe("Integration Tests", function () {
+    it("Should verify a merkle proof", async function() {
         const tree = new Tree()
         const idx = tree.addMember("101")
         const idx_proof = tree.generateMerkleProof(idx)
@@ -17,9 +17,9 @@ describe("Integration Tests", () => {
         const pass = await verify_merkle_proof(leaf, siblings, pathIndices, root)
 
         expect(pass).toBe(true)
-    }, 1920 * 1000)
+    })
 
-    it("Should verify a valid vote transaction", async () => {
+    it("Should verify a valid vote transaction", async function() {
         const social_graph = new PrivateGraph()
         const userID = social_graph.registerCandidate("Jim", 1)
 
@@ -88,9 +88,10 @@ describe("Integration Tests", () => {
         const new_coin_2_commitment = voted.coin_2.cm
 
         expect(await vote_pour(root.toString(), old_sn.toString(), new_cm_1.toString(), new_cm_2.toString(), v_pub.toString(), h_sig.toString(), h.toString(), siblings.map(i => i.toString()), pathIndices.map(i => i.toString()), old_coin_pk_address.toString(), old_coin_value.toString(), old_coin_nullifier_seed.toString(), old_coin_r.toString(), old_coin_commitment.toString(), old_sk.toString(), new_coin_1_pk_address.toString(), new_coin_1_value.toString(), new_coin_1_nullifier_seed.toString(), new_coin_1_r.toString(), new_coin_1_commitment.toString(), new_coin_2_pk_address.toString(), new_coin_2_value.toString(), new_coin_2_nullifier_seed.toString(), new_coin_2_r.toString(), new_coin_2_commitment.toString())).toBe(true)
-    }, 960 * 1000)
+    })
 
-    it("Should verify a valid claim pour transaction", async () => {
+
+    it("Should verify a valid claim pour transaction", async function() {
         const social_graph = new PrivateGraph()
         // user to become verified
         const userID = social_graph.registerCandidate("Jim", 10)
@@ -179,5 +180,5 @@ describe("Integration Tests", () => {
         const new_coin_2_commitment = claim_rewards.coin_2.cm
 
         expect(await claim_pour(root.toString(), old_sn.toString(), new_cm_1.toString(), new_cm_2.toString(), v_pub.toString(), h_sig.toString(), h.toString(), siblings.map(i => i.toString()), pathIndices.map(i => i.toString()), old_coin_pk_address.toString(), old_coin_value.toString(), old_coin_nullifier_seed.toString(), old_coin_r.toString(), old_coin_commitment.toString(), old_sk.toString(), new_coin_1_pk_address.toString(), new_coin_1_value.toString(), new_coin_1_nullifier_seed.toString(), new_coin_1_r.toString(), new_coin_1_commitment.toString(), new_coin_2_pk_address.toString(), new_coin_2_value.toString(), new_coin_2_nullifier_seed.toString(), new_coin_2_r.toString(), new_coin_2_commitment.toString())).toBe(true)
-    }, 1920 * 1000)
+    })
 })

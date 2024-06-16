@@ -1,16 +1,13 @@
-require("@nomicfoundation/hardhat-viem");
-require("@nomiclabs/hardhat-ethers");
-require("@nomicfoundation/hardhat-chai-matchers");
-/**
- * @type import('hardhat/config').HardhatUserConfig
- */
-module.exports = {
+import type { HardhatUserConfig } from "hardhat/config";
+import "@nomicfoundation/hardhat-toolbox-viem";
+
+const config: HardhatUserConfig = {
   solidity: {
     version:  "0.8.13",
     settings: {
       optimizer: {
         enabled: true,
-        runs: 2000,
+        runs: 5,
         details: {
           yul: true,
           yulDetails: {
@@ -20,5 +17,9 @@ module.exports = {
         }
       }
     },
+
   },
+  
 };
+
+export default config;

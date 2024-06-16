@@ -1,19 +1,19 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
-import {WorldcoinVerifier} from "./WorldcoinVerifier.sol";
+import {FakeWorldcoinVerifier} from "./FakeWorldCoinVerifier.sol";
 import {WorldcoinSocialGraphStorage} from "./WorldcoinSocialGraphStorage.sol";
 import {PoseidonT3} from "../lib/poseidon-solidity/contracts/PoseidonT3.sol";
 import {PoseidonT2} from "../lib/poseidon-solidity/contracts/PoseidonT2.sol";
 import {ABDKMath64x64} from "../lib/abdk-libraries-solidity/ABDKMath64x64.sol";
 import {BinaryIMT, BinaryIMTData} from "../lib/zk-kit.solidity/packages/imt/contracts/BinaryIMT.sol";
-import "../../circuits/votePour/contract/votePour/plonk_vk.sol" as voteCircuit;
-import "../../circuits/claimPour/contract/claimPour/plonk_vk.sol" as claimCircuit;
+import {UltraVerifier as ClaimUltraVerifier} from "./claim-plonk-verifier.sol";
+import {UltraVerifier as VoteUltraVerifier} from "./vote-plonk-verifier.sol";
 
 contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
-    WorldcoinVerifier worldIDVerificationContract;
-    claimCircuit.UltraVerifier claimVerifier;
-    voteCircuit.UltraVerifier voteVerifier;
+    FakeWorldcoinVerifier public immutable worldIDVerificationContract;
+    ClaimUltraVerifier claimVerifier;
+    VoteUltraVerifier voteVerifier;
 
     /// @notice Event for user registration as World ID holder or Candidate
     event UserRegistered(address indexed user, Status status);
@@ -30,15 +30,15 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
      * @param _voteVerifier - contract address of the vote circuit solidity verifier
      * @param _claimVerifier - contract address of the claim circuit solidity verifier
      */
-    constructor(WorldcoinVerifier _worldcoinVerifier, address _voteVerifier, address _claimVerifier) {
+    constructor(FakeWorldcoinVerifier _worldcoinVerifier, VoteUltraVerifier _voteVerifier, ClaimUltraVerifier _claimVerifier) {
         // setup worldID verification
         worldIDVerificationContract = _worldcoinVerifier;
         // setup tree and initialise with default zeros and push init root to history
         BinaryIMT.initWithDefaultZeroes(VotingTree, depth);
         BinaryIMT.initWithDefaultZeroes(RewardsTree, depth);
         voteMerkleRoot.push(VotingTree.root);
-        voteVerifier = voteCircuit.UltraVerifier(_voteVerifier);
-        claimVerifier = claimCircuit.UltraVerifier(_claimVerifier);
+        voteVerifier = _voteVerifier;
+        claimVerifier = _claimVerifier;
     }
 
     /**
