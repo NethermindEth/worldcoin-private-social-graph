@@ -47,7 +47,7 @@ contract WorldcoinSocialGraphStorage {
 
     mapping(address => uint256[]) userIDMerkleRoot;
     uint256[] voteMerkleRoot;
-    mapping(uint256 => bool) voteMerkleRootExists;
+    mapping(uint256 => bool) public voteMerkleRootExists;
     uint256[] rewardsMerkleRoot;
 
     // Mint transaction

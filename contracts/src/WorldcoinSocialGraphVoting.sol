@@ -25,6 +25,8 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
     event RewardClaimed(address indexed user, uint256 reward);
     /// @notice Event for penalising a user
     event Penalised(address indexed candidate);
+    /// @notice Event for recommending a candidate
+    event CandidateRecommended(address indexed candidate);
 
     /**
      * @notice sets the state contracts used for verification of world ID and zk circuits
@@ -66,7 +68,9 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
         // ensure value of mint is equal to 100
         require(tx_mint.value == 100, "Coin minted with incorrect value != 100");
         // will add commitment to the on-chain tree
-        voteMerkleRoot.push(BinaryIMT.insert(VotingTree, tx_mint.commitment));
+        uint256 new_root = BinaryIMT.insert(VotingTree, tx_mint.commitment);
+        voteMerkleRoot.push(new_root);
+        voteMerkleRootExists[new_root] = true;
         emit WorldIDRegistered();
     }
 
@@ -116,6 +120,7 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
         userIDMerkleRoot[_user].push(BinaryIMT.insert(candidateTrees[_user], tx_pour.cm_2));
         users[_user].v_in += weight;
         users[_user].numberOfVotes++;
+        emit CandidateRecommended(_user);
     }
 
     /**
@@ -130,6 +135,7 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
         if (voteNullifiersExists[tx_pour.sn_old] || !voteMerkleRootExists[tx_pour.rt]) {
             return false;
         }
+
         // compute h_sig = poseidon(pk_sig)
         uint256 h_sig = PoseidonT2.hash([uint256(tx_pour.pk_sig)]);
 
