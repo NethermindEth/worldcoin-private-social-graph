@@ -4,7 +4,7 @@ pragma solidity ^0.8.13;
 import {BinaryIMT, BinaryIMTData} from "../lib/zk-kit.solidity/packages/imt/contracts/BinaryIMT.sol";
 
 contract WorldcoinSocialGraphStorage {
-    uint256 depth = 64;
+    uint256 depth = 32; // MAX DEPTH OF IMT is 32
     uint256 internal x = 600;
 
     enum Status {
