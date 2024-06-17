@@ -133,6 +133,11 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
         // compute h_sig = poseidon(pk_sig)
         uint256 h_sig = PoseidonT2.hash([uint256(tx_pour.pk_sig)]);
 
+        bytes encodeData = abiEncodeTxPourParams(tx_pour, h_sig);
+        isValidSignature(keccak256(encodeData), tx_pour.sig);
+        // Verify signature
+        require(verifySignature(msg.sender, keccak256(encodeData), tx_pour.sig));
+
         // Verify pour circuit proof
         bytes32[] memory publicInputs = new bytes32[](7);
         publicInputs[0] = bytes32(tx_pour.rt);
@@ -257,8 +262,31 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
         emit Penalised(msg.sender);
     }
 
+    function isValidSignature(bytes32 _hash, bytes memory _sig) internal view { }
+
     /**
      * @notice verify signature
      */
-    function verifySignature() public { }
+    function verifySignature(address _signer, bytes32 _hash, bytes _sig) internal returns (bool) {
+        bytes32 prefixedHashMessage = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", _hash));
+        return SignatureChecker.isValidSignatureNow(_signer, prefixedHashMessage, _sig);
+    }
+
+    function abiEncodeTxPourParams(Pour memory _txPour, uint256 h_sig) private view returns (bytes memory) {
+        return abi.encodePacked(
+            _txPour.rt,
+            _txPour.sn_old,
+            _txPour.cm_1,
+            _txPour.cm_2,
+            _txPour.v_pub,
+            _txPour.info,
+            _txPour.pk_sig,
+            _txPour.h,
+            h_sig,
+            _txPour.proof,
+            _txPour.info
+        )
+        // should sign chain id, contract address, nonce
+        ;
+    }
 }
