@@ -17,5 +17,7 @@ interface IWorldID {
         uint256 nullifierHash,
         uint256 externalNullifierHash,
         uint256[8] calldata proof
-    ) external view;
+    )
+        external
+        view;
 }

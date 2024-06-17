@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
-import {WorldcoinVerifier} from "./WorldcoinVerifier.sol";
-import {WorldcoinSocialGraphStorage} from "./WorldcoinSocialGraphStorage.sol";
-import {PoseidonT3} from "../lib/poseidon-solidity/contracts/PoseidonT3.sol";
-import {PoseidonT2} from "../lib/poseidon-solidity/contracts/PoseidonT2.sol";
-import {ABDKMath64x64} from "../lib/abdk-libraries-solidity/ABDKMath64x64.sol";
-import {BinaryIMT, BinaryIMTData} from "../lib/zk-kit.solidity/packages/imt/contracts/BinaryIMT.sol";
+import { WorldcoinVerifier } from "./WorldcoinVerifier.sol";
+import { WorldcoinSocialGraphStorage } from "./WorldcoinSocialGraphStorage.sol";
+import { PoseidonT3 } from "@poseidon/contracts/PoseidonT3.sol";
+import { PoseidonT2 } from "@poseidon/contracts/PoseidonT2.sol";
+import { ABDKMath64x64 } from "@abdk-library/ABDKMath64x64.sol";
+import { BinaryIMT, BinaryIMTData } from "../lib/zk-kit.solidity/packages/imt/contracts/BinaryIMT.sol";
+import { SignatureChecker } from "@openzeppelin/contracts/utils/cryptography/SignatureChecker.sol";
 import "../../circuits/votePour/contract/votePour/plonk_vk.sol" as voteCircuit;
 import "../../circuits/claimPour/contract/claimPour/plonk_vk.sol" as claimCircuit;
 
@@ -57,7 +58,9 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
         uint256 nullifierHash,
         uint256[8] calldata proof,
         Mint calldata tx_mint
-    ) public {
+    )
+        public
+    {
         // Perform checks to verify World ID
         worldIDVerificationContract.verifyAndExecute(signal, root, nullifierHash, proof);
         require(verifyMint(tx_mint), "Mint did not verify");
@@ -149,9 +152,11 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
 
     /**
      * @notice Computes the inverse of the exponential function for a given input.
-     * @param input - The value for which the inverse exponential is to be calculated, represented as an integer percentage.
+     * @param input - The value for which the inverse exponential is to be calculated, represented as an integer
+     * percentage.
      * @return The result of the inverse exponential calculation, scaled to keep 5 decimal places.
-     * @dev Use the ABDKMath64x64 library to perform fixed-point arithmetic operations. The input is first converted to a
+     * @dev Use the ABDKMath64x64 library to perform fixed-point arithmetic operations. The input is first converted to
+     * a
      *      fixed-point percentage. The exponential of this percentage is calculated and then inverted.
      */
     function inversePower(uint256 input) public pure returns (uint256) {
@@ -189,7 +194,7 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
         voteMerkleRoot.push(new_root);
         voteMerkleRootExists[new_root] = true;
         users[msg.sender].status = Status.VERIFIED_IDENTITIY;
-        uint256 c_epoch = (block.number / 50064) + 1;
+        uint256 c_epoch = (block.number / 50_064) + 1;
         users[msg.sender].epochV = c_epoch;
         rewards_per_epoch[c_epoch].sum += users[msg.sender].v_in;
         emit CandidateVerified(msg.sender, Status.VERIFIED_IDENTITIY);
@@ -207,7 +212,7 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
         require(users[_user].status == Status.VERIFIED_IDENTITIY, "user claiming rewards for must be verified");
 
         //compute current epoch
-        uint256 c_epoch = (block.number / 50064) + 1;
+        uint256 c_epoch = (block.number / 50_064) + 1;
         uint256 epoch = users[_user].epochV;
         require(c_epoch > epoch, "user claiming rewards for verified epoch less than current epoch");
         //check if public parameters are valid
@@ -251,4 +256,9 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
 
         emit Penalised(msg.sender);
     }
+
+    /**
+     * @notice verify signature
+     */
+    function verifySignature() public { }
 }
