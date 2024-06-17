@@ -14,7 +14,7 @@ Thanks to Lazaro Raul Iglesias Vera, Sameer Kumar, Antonio Manuel Larriba Flor f
 
 For an overview, the specification, more related work and Sybil and Game theoretic analysis please check our notion pages.
 
-You can follow the instructions below taken from the README file of https://github.com/worldcoin/world-id-onchain-template
+You can follow the instructions below taken from the README file of [https://github.com/worldcoin/world-id-onchain-template](https://github.com/worldcoin/world-id-onchain-template).
 ## Local Development
 
 ### Prerequisites
@@ -83,6 +83,9 @@ You'll need to import the private keys on the local testnet into your wallet use
 When connecting your wallet to the local development environment, you will be prompted to add the network to your wallet.
 
 Use the [Worldcoin Simulator](https://simulator.worldcoin.org) in place of World App to scan the IDKit QR codes and generate the zero-knowledge proofs.
+
+#### Warning regarding root collision attacks:
+Note that we use the same hash function without domain separation for both leaves and the internal nodes of the tree. This could potentially lead to root collision attacks where an attacker can build a tree with the same root but different leaves. The fact that we accept only Merkle paths of specific length could mitigate this but still needs consideration.
 
 ### References 
 1. Worldcoin: https://docs.worldcoin.org/
