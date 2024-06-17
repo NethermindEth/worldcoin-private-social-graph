@@ -80,7 +80,7 @@ pub fn vote_pour(
     assert(h == hash4([old_sk, 2, 0, h_sig]));
 
     // 6. check value is consistent between old and new coins
-    assert(v_pub.lt(old_coin_value));
+    assert(v_pub.lt(old_coin_value) | (old_coin_value == v_pub));
     assert(new_coin_1_value == old_coin_value - v_pub);
     assert(new_coin_2_value == v_pub);
     true
