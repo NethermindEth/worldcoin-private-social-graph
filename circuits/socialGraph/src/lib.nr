@@ -1,7 +1,7 @@
 use dep::std::hash::poseidon;
 
 #[export]
-fn verify_merkle_proof(leaf: Field, siblings: [Field; 64], indices: [Field; 64], root: Field) -> bool {
+fn verify_merkle_proof(leaf: Field, siblings: [Field; 32], indices: [Field; 32], root: Field) -> bool {
     let mut node = leaf;
 
     for i in 0..64 {

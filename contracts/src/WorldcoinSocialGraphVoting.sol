@@ -3,7 +3,7 @@ pragma solidity ^0.8.13;
 
 import {FakeWorldcoinVerifier} from "./FakeWorldCoinVerifier.sol";
 import {WorldcoinSocialGraphStorage} from "./WorldcoinSocialGraphStorage.sol";
-import {PoseidonT3} from "../lib/poseidon-solidity/contracts/PoseidonT3.sol";
+import {PoseidonT4} from "../lib/poseidon-solidity/contracts/PoseidonT4.sol";
 import {PoseidonT2} from "../lib/poseidon-solidity/contracts/PoseidonT2.sol";
 import {ABDKMath64x64} from "../lib/abdk-libraries-solidity/ABDKMath64x64.sol";
 import {BinaryIMT, BinaryIMTData} from "../lib/zk-kit.solidity/packages/imt/contracts/BinaryIMT.sol";
@@ -15,6 +15,8 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
     ClaimUltraVerifier claimVerifier;
     VoteUltraVerifier voteVerifier;
 
+    /// @notice Event for registering a worldID
+    event WorldIDRegistered();
     /// @notice Event for user registration as World ID holder or Candidate
     event UserRegistered(address indexed user, Status status);
     /// @notice Candidate verified event
@@ -65,6 +67,7 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
         require(tx_mint.value == 100, "Coin minted with incorrect value != 100");
         // will add commitment to the on-chain tree
         voteMerkleRoot.push(BinaryIMT.insert(VotingTree, tx_mint.commitment));
+        emit WorldIDRegistered();
     }
 
     /**
@@ -88,7 +91,7 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
      * @param tx_mint - mint tx used to signup a user to the vote tree
      */
     function verifyMint(Mint calldata tx_mint) public pure returns (bool) {
-        return tx_mint.commitment == PoseidonT3.hash([tx_mint.value, tx_mint.k]);
+        return tx_mint.commitment == PoseidonT4.hash([tx_mint.k, 0, tx_mint.value]);
     }
 
     /**
