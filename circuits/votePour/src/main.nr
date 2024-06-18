@@ -10,8 +10,8 @@ fn main(
     h_sig: pub Field,
     h: pub Field,
     // private witnesses
-    siblings: [Field; 64], 
-    indices: [Field; 64],
+    siblings: [Field; 32], 
+    indices: [Field; 32],
     // old coin
     old_coin_pk_address: Field,
     old_coin_value: Field,

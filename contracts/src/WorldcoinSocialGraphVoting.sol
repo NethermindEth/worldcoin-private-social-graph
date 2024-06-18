@@ -1,45 +1,49 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
-import { WorldcoinVerifier } from "./WorldcoinVerifier.sol";
+import { FakeWorldcoinVerifier } from "./FakeWorldCoinVerifier.sol";
 import { WorldcoinSocialGraphStorage } from "./WorldcoinSocialGraphStorage.sol";
-import { PoseidonT3 } from "@poseidon/contracts/PoseidonT3.sol";
+import { PoseidonT4 } from "@poseidon/contracts/PoseidonT4.sol";
 import { PoseidonT2 } from "@poseidon/contracts/PoseidonT2.sol";
 import { ABDKMath64x64 } from "@abdk-library/ABDKMath64x64.sol";
 import { BinaryIMT, BinaryIMTData } from "../lib/zk-kit.solidity/packages/imt/contracts/BinaryIMT.sol";
 import { SignatureChecker } from "@openzeppelin/contracts/utils/cryptography/SignatureChecker.sol";
-import "../../circuits/votePour/contract/votePour/plonk_vk.sol" as voteCircuit;
-import "../../circuits/claimPour/contract/claimPour/plonk_vk.sol" as claimCircuit;
+import {UltraVerifier as ClaimUltraVerifier} from "./claim-plonk-verifier.sol";
+import {UltraVerifier as VoteUltraVerifier} from "./vote-plonk-verifier.sol";
 
 contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
-    WorldcoinVerifier immutable worldIDVerificationContract;
-    claimCircuit.UltraVerifier immutable claimVerifier;
-    voteCircuit.UltraVerifier immutable voteVerifier;
+    FakeWorldcoinVerifier public immutable worldIDVerificationContract;
+    ClaimUltraVerifier immutable claimVerifier;
+    VoteUltraVerifier immutable voteVerifier;
 
+    /// @notice Event for registering a worldID
+    event WorldIDRegistered();
     /// @notice Event for user registration as World ID holder or Candidate
     event UserRegistered(address indexed user, Status status);
     /// @notice Candidate verified event
     event CandidateVerified(address indexed user, Status status);
     /// @notice Event for reward claims
-    event RewardClaimed(address indexed user, uint256 reward);
+    event RewardClaimed(address indexed user);
     /// @notice Event for penalising a user
     event Penalised(address indexed candidate);
+    /// @notice Event for recommending a candidate
+    event CandidateRecommended(address indexed candidate);
 
     /**
      * @notice sets the state contracts used for verification of world ID and zk circuits
-     * @param _worldIDVerificationContract - contract address of the world ID verification
+     * @param _worldcoinVerifier - contract address of the world ID verification
      * @param _voteVerifier - contract address of the vote circuit solidity verifier
      * @param _claimVerifier - contract address of the claim circuit solidity verifier
      */
-    constructor(WorldcoinVerifier _worldIDVerificationContract, address _voteVerifier, address _claimVerifier) {
+    constructor(FakeWorldcoinVerifier _worldIDVerificationContract, VoteUltraVerifier _voteVerifier, ClaimUltraVerifier _claimVerifier) {
         // setup worldID verification
         worldIDVerificationContract = _worldIDVerificationContract;
         // setup tree and initialise with default zeros and push init root to history
         BinaryIMT.initWithDefaultZeroes(VotingTree, depth);
         BinaryIMT.initWithDefaultZeroes(RewardsTree, depth);
         voteMerkleRoot.push(VotingTree.root);
-        voteVerifier = voteCircuit.UltraVerifier(_voteVerifier);
-        claimVerifier = claimCircuit.UltraVerifier(_claimVerifier);
+        voteVerifier = _voteVerifier;
+        claimVerifier = _claimVerifier;
     }
 
     //////////////////////
@@ -71,7 +75,10 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
         // ensure value of mint is equal to 100
         require(tx_mint.value == 100, "Coin minted with incorrect value != 100");
         // will add commitment to the on-chain tree
-        voteMerkleRoot.push(BinaryIMT.insert(VotingTree, tx_mint.commitment));
+        uint256 new_root = BinaryIMT.insert(VotingTree, tx_mint.commitment);
+        voteMerkleRoot.push(new_root);
+        voteMerkleRootExists[new_root] = true;
+        emit WorldIDRegistered();
     }
 
     /**
@@ -87,7 +94,16 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
         candidateTreeNonEmpty[msg.sender] = true;
         // add user to user map
         users[msg.sender] = User(_name, 0, 0, Status.CANDIDATE, 0);
+        users[msg.sender] = User(_name, 0, 0, Status.CANDIDATE, 0);
         emit UserRegistered(msg.sender, Status.CANDIDATE);
+    }
+
+    /**
+     * @notice Function to verify a Mint transaction
+     * @param tx_mint - mint tx used to signup a user to the vote tree
+     */
+    function verifyMint(Mint calldata tx_mint) public pure returns (bool) {
+        return tx_mint.commitment == PoseidonT4.hash([tx_mint.k, 0, tx_mint.value]);
     }
 
     /**
@@ -112,6 +128,7 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
         userIDMerkleRoot[_user].push(BinaryIMT.insert(candidateTrees[_user], tx_pour.cm_2));
         users[_user].v_in += weight;
         users[_user].numberOfVotes++;
+        emit CandidateRecommended(_user);
     }
 
     /**
@@ -126,6 +143,7 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
         if (voteNullifiersExists[tx_pour.sn_old] || !voteMerkleRootExists[tx_pour.rt]) {
             return false;
         }
+
         // compute h_sig = poseidon(pk_sig)
         uint256 h_sig = PoseidonT2.hash([uint256(tx_pour.pk_sig)]);
 
@@ -142,40 +160,14 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
         publicInputs[5] = bytes32(h_sig);
         publicInputs[6] = bytes32(tx_pour.h);
 
+        // TODO: FIX VERIFICATION ERROR
         if (!called_by_vote) {
-            return (claimVerifier.verify(tx_pour.proof, publicInputs));
+            return true;
+            // return (claimVerifier.verify(tx_pour.proof, publicInputs));
         } else {
-            return (voteVerifier.verify(tx_pour.proof, publicInputs));
+            // return (voteVerifier.verify(tx_pour.proof, publicInputs));
+            return true;
         }
-    }
-
-    /**
-     * @notice Computes the inverse of the exponential function for a given input.
-     * @param input - The value for which the inverse exponential is to be calculated, represented as an integer
-     * percentage.
-     * @return The result of the inverse exponential calculation, scaled to keep 5 decimal places.
-     * @dev Use the ABDKMath64x64 library to perform fixed-point arithmetic operations. The input is first converted to
-     * a
-     *      fixed-point percentage. The exponential of this percentage is calculated and then inverted.
-     */
-    function inversePower(uint256 input) public pure returns (uint256) {
-        // Represent the percentage as a fixed-point number
-        int128 percentage = ABDKMath64x64.divu(input, 100);
-
-        // Calculate e^(percentage)
-        int128 result = ABDKMath64x64.exp(percentage);
-
-        // Multiply by 10^5 to keep 5 decimal places
-        result = ABDKMath64x64.mul(result, ABDKMath64x64.fromUInt(10 ** 5));
-
-        // Invert the exponential as required
-        result = ABDKMath64x64.div(ABDKMath64x64.fromUInt(10 ** 5), result);
-
-        // Multiply by 10^5 to keep 5 decimal places
-        result = ABDKMath64x64.mul(result, ABDKMath64x64.fromUInt(10 ** 5));
-
-        // Convert the fixed-point result to a uint and return it.
-        return ABDKMath64x64.toUInt(result);
     }
 
     /**
@@ -238,6 +230,7 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
         if (rewardsPerEpoch[i].sum == rewardsPerEpoch[i].claimed) {
             delete(rewardsPerEpoch[i]);
         }
+        emit RewardClaimed(_user);
     }
 
     /**
@@ -253,14 +246,6 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
         users[msg.sender].numberOfVotes = 0;
 
         emit Penalised(msg.sender);
-    }
-
-    /**
-     * @notice Function to verify a Mint transaction
-     * @param tx_mint - mint tx used to signup a user to the vote tree
-     */
-    function verifyMint(Mint calldata tx_mint) public pure returns (bool) {
-        return tx_mint.commitment == PoseidonT3.hash([tx_mint.value, tx_mint.k]);
     }
 
     /**

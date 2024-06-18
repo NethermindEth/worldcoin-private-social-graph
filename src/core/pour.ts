@@ -100,7 +100,7 @@ export async function pour(
         let pathIndicesString = "["
         let siblingsString = "["
 
-        for (var i = 0; i < 64 ; i++) {
+        for (var i = 0; i < 32 ; i++) {
             pathIndicesString += "\"" + path.pathIndices[i] + "\","
             siblingsString += "\"" + path.siblings[i] + "\","
         }
@@ -140,7 +140,7 @@ export async function pour(
 
         const claim_proof_path = "circuits/claimPour/proofs/claimPour.proof"
         pour_instance = [rt, sn_old, new_cm_1, new_cm_2, v_pub, h_sig, h]
-        proof = readFileSync(claim_proof_path, 'utf-8')
+        proof += readFileSync(claim_proof_path, 'utf-8')
     } else {
         // call vote pour
         const vote_path = "circuits/votePour/Prover.toml"
@@ -148,7 +148,7 @@ export async function pour(
         let pathIndicesString = "["
         let siblingsString = "["
 
-        for (var i = 0; i < 64 ; i++) {
+        for (var i = 0; i < 32 ; i++) {
             pathIndicesString += "\"" + path.pathIndices[i] + "\","
             siblingsString += "\"" + path.siblings[i] + "\","
         }
@@ -189,7 +189,7 @@ export async function pour(
         // TODO: HAVE THIS READ THE PROOF FROM CIRCUITS
         const vote_proof_path = "circuits/votePour/proofs/votePour.proof"
         pour_instance = [rt, sn_old, new_cm_1, new_cm_2, v_pub, h_sig, h]
-        proof = readFileSync(vote_proof_path, 'utf-8')
+        proof += readFileSync(vote_proof_path, 'utf-8')
     }
 
     // Sign message
@@ -340,6 +340,7 @@ const runCommand = async (command: string): Promise<void> => {
         console.log('stdout:', stdout);
         if (stderr != "") {
             console.log('stderr:', stderr);
+            throw new Error(stderr)
         }
     } catch (error) {
         console.error('Error:', error);

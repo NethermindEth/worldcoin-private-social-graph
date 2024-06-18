@@ -4,7 +4,7 @@ pragma solidity ^0.8.13;
 import { BinaryIMT, BinaryIMTData } from "../lib/zk-kit.solidity/packages/imt/contracts/BinaryIMT.sol";
 
 contract WorldcoinSocialGraphStorage {
-    uint256 internal constant depth = 64;
+    uint256 internal constant depth = 32; // MAX DEPTH OF IMT is 32
     uint256 internal constant x = 600;
     BinaryIMTData VotingTree;
     BinaryIMTData RewardsTree;
@@ -59,7 +59,7 @@ contract WorldcoinSocialGraphStorage {
     }
 
     mapping(uint256 => Rewards) rewardsPerEpoch;
-    mapping(address => BinaryIMTData) candidateTrees;
+    mapping(address => BinaryIMTData) public candidateTrees;
     mapping(address => bool) candidateTreeNonEmpty;
     mapping(address => uint256[]) userIDNullifiers;
     mapping(address => uint256) sizeOfUserIDNullifiers;

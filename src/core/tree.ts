@@ -6,7 +6,7 @@ import { poseidon2 } from "poseidon-lite/poseidon2"
 export class Tree {
     public IMT: IMT
 
-    public d = 64
+    public d = 32
     public zeroValue = 0
     public arity = 2
     public roots: bigint[]
