@@ -63,186 +63,186 @@ const deployVoting = async () => {
 };
 
 describe("Voting Contract Tests", function () {
-    // it("Should verify mint tx", async () => {
-    //     const [deployer, candidate] = await hre.ethers.getSigners()
-    //     const { voting, worldcoinVerifier, voteVerifier, claimVerifier } = await loadFixture(deployVoting);
+    it("Should verify mint tx", async () => {
+        const [deployer, candidate] = await hre.ethers.getSigners()
+        const { voting, worldcoinVerifier, voteVerifier, claimVerifier } = await loadFixture(deployVoting);
 
-    //     const m = mint(10n, 100)
-    //     expect(verifyMint(m.coin.cm, m.tx_mint.value, m.tx_mint.k)).to.be.true
-    //     const mint_tx = {
-    //         commitment: m.tx_mint.cm,
-    //         value: m.tx_mint.value,
-    //         k: m.tx_mint.k,
-    //         s: m.tx_mint.s
+        const m = mint(10n, 100)
+        expect(verifyMint(m.coin.cm, m.tx_mint.value, m.tx_mint.k)).to.be.true
+        const mint_tx = {
+            commitment: m.tx_mint.cm,
+            value: m.tx_mint.value,
+            k: m.tx_mint.k,
+            s: m.tx_mint.s
     
-    //     }
-    //     expect(await voting.verifyMint(mint_tx)).to.be.true
-    // })
+        }
+        expect(await voting.verifyMint(mint_tx)).to.be.true
+    })
 
-    // it("Should not verify incorrect mint tx", async () => {
-    //     const [deployer, candidate] = await hre.ethers.getSigners()
-    //     const { voting, worldcoinVerifier, voteVerifier, claimVerifier } = await loadFixture(deployVoting);
+    it("Should not verify incorrect mint tx", async () => {
+        const [deployer, candidate] = await hre.ethers.getSigners()
+        const { voting, worldcoinVerifier, voteVerifier, claimVerifier } = await loadFixture(deployVoting);
 
-    //     const mint_tx = {
-    //         commitment: 10,
-    //         value: 10,
-    //         k: 10,
-    //         s: 10
+        const mint_tx = {
+            commitment: 10,
+            value: 10,
+            k: 10,
+            s: 10
     
-    //     }
-    //     expect(await voting.verifyMint(mint_tx)).to.be.false
-    // })
+        }
+        expect(await voting.verifyMint(mint_tx)).to.be.false
+    })
 
-    // it("Should register a candidate", async () => {
-    //     const [deployer, candidate] = await hre.ethers.getSigners()
-    //     const { voting, worldcoinVerifier, voteVerifier, claimVerifier } = await loadFixture(deployVoting);
+    it("Should register a candidate", async () => {
+        const [deployer, candidate] = await hre.ethers.getSigners()
+        const { voting, worldcoinVerifier, voteVerifier, claimVerifier } = await loadFixture(deployVoting);
         
-    //     expect(await voting.connect(candidate).registerAsCandidate("Bob")).to.emit(voting, "UserRegistered")
-    //     const can = await voting.users(candidate.address)
-    //     assert(can.name == "Bob", "Must have correct name")
-    //     assert(can.v_in == 0, "Must have v_in = 0")
-    //     assert(can.epochV == 0, "Must have epochV = 0")
-    // })
+        expect(await voting.connect(candidate).registerAsCandidate("Bob")).to.emit(voting, "UserRegistered")
+        const can = await voting.users(candidate.address)
+        assert(can.name == "Bob", "Must have correct name")
+        assert(can.v_in == 0, "Must have v_in = 0")
+        assert(can.epochV == 0, "Must have epochV = 0")
+    })
 
-    // it("Should not register a candidate twice", async () => {
-    //     const [deployer, candidate] = await hre.ethers.getSigners()
-    //     const { voting, worldcoinVerifier, voteVerifier, claimVerifier } = await loadFixture(deployVoting);
-    //     expect(await voting.connect(candidate).registerAsCandidate("Bob")).to.emit(voting, "UserRegistered");
-    //     const can = await voting.users(candidate.address)
-    //     await expect(voting.connect(candidate).registerAsCandidate("Bob")).to.revertedWith("msg.sender is already registered");
-    // })
+    it("Should not register a candidate twice", async () => {
+        const [deployer, candidate] = await hre.ethers.getSigners()
+        const { voting, worldcoinVerifier, voteVerifier, claimVerifier } = await loadFixture(deployVoting);
+        expect(await voting.connect(candidate).registerAsCandidate("Bob")).to.emit(voting, "UserRegistered");
+        const can = await voting.users(candidate.address)
+        await expect(voting.connect(candidate).registerAsCandidate("Bob")).to.revertedWith("msg.sender is already registered");
+    })
 
-    // it("Should register a worldid user", async () => {
-    //     const social_graph = new PrivateGraph()
-    //     const keys = social_graph.create_address()
+    it("Should register a worldid user", async () => {
+        const social_graph = new PrivateGraph()
+        const keys = social_graph.create_address()
         
-    //     const worldIDRegister = social_graph.registerWorldID(keys.pk)
-    //     const cm = worldIDRegister.tx_mint.cm
-    //     const value = worldIDRegister.tx_mint.value
-    //     const k = worldIDRegister.tx_mint.k
-    //     const s = worldIDRegister.tx_mint.s
-    //     const tx_mint = {
-    //         commitment: cm,
-    //         value: value,
-    //         k: k,
-    //         s: s
-    //     }
+        const worldIDRegister = social_graph.registerWorldID(keys.pk)
+        const cm = worldIDRegister.tx_mint.cm
+        const value = worldIDRegister.tx_mint.value
+        const k = worldIDRegister.tx_mint.k
+        const s = worldIDRegister.tx_mint.s
+        const tx_mint = {
+            commitment: cm,
+            value: value,
+            k: k,
+            s: s
+        }
         
-    //     const [deployer, worldID] = await hre.ethers.getSigners()
-    //     const { voting, worldcoinVerifier, voteVerifier, claimVerifier } = await loadFixture(deployVoting);
+        const [deployer, worldID] = await hre.ethers.getSigners()
+        const { voting, worldcoinVerifier, voteVerifier, claimVerifier } = await loadFixture(deployVoting);
         
-    //     expect(await voting.connect(worldID).registerAsWorldIDHolder(
-    //         worldID.address, 1234, 1234, [1234,1234,1234,1234,1234,1234,1234,1234], tx_mint
-    //     )).to.emit(voting, "WorldIDRegistered")
+        expect(await voting.connect(worldID).registerAsWorldIDHolder(
+            worldID.address, 1234, 1234, [1234,1234,1234,1234,1234,1234,1234,1234], tx_mint
+        )).to.emit(voting, "WorldIDRegistered")
 
-    //     const rootExists = await voting.voteMerkleRootExists(hre.ethers.toBeHex(social_graph.voting_tree.root))
-    //     assert(rootExists, "Must have added root to tree")
-    // })
+        const rootExists = await voting.voteMerkleRootExists(hre.ethers.toBeHex(social_graph.voting_tree.root))
+        assert(rootExists, "Must have added root to tree")
+    })
 
-    // it("Should not register a worldID user with incorrect mint", async () => {
-    //     const [deployer, worldID] = await hre.ethers.getSigners()
-    //     const { voting, worldcoinVerifier, voteVerifier, claimVerifier } = await loadFixture(deployVoting);
+    it("Should not register a worldID user with incorrect mint", async () => {
+        const [deployer, worldID] = await hre.ethers.getSigners()
+        const { voting, worldcoinVerifier, voteVerifier, claimVerifier } = await loadFixture(deployVoting);
         
-    //     const tx_mint = {
-    //         commitment: 10,
-    //         value: 10,
-    //         k: 10,
-    //         s: 10
-    //     }
+        const tx_mint = {
+            commitment: 10,
+            value: 10,
+            k: 10,
+            s: 10
+        }
 
-    //     await expect( voting.connect(worldID).registerAsWorldIDHolder(
-    //         worldID.address, 1234, 1234, [1234,1234,1234,1234,1234,1234,1234,1234], tx_mint
-    //     )).to.be.revertedWith("Mint did not verify")
-    // })
+        await expect( voting.connect(worldID).registerAsWorldIDHolder(
+            worldID.address, 1234, 1234, [1234,1234,1234,1234,1234,1234,1234,1234], tx_mint
+        )).to.be.revertedWith("Mint did not verify")
+    })
 
-    // it("Should not register a worldID user with coin value not 100", async () => {
-    //     const [deployer, worldID] = await hre.ethers.getSigners()
-    //     const { voting, worldcoinVerifier, voteVerifier, claimVerifier } = await loadFixture(deployVoting);
+    it("Should not register a worldID user with coin value not 100", async () => {
+        const [deployer, worldID] = await hre.ethers.getSigners()
+        const { voting, worldcoinVerifier, voteVerifier, claimVerifier } = await loadFixture(deployVoting);
         
-    //     const m = mint(10n, 0)
-    //     const mint_tx = {
-    //         commitment: m.tx_mint.cm,
-    //         value: m.tx_mint.value,
-    //         k: m.tx_mint.k,
-    //         s: m.tx_mint.s
-    //     }
-    //     await expect(voting.connect(worldID).registerAsWorldIDHolder(
-    //         worldID.address, 1234, 1234, [1234,1234,1234,1234,1234,1234,1234,1234], mint_tx
-    //     )).to.be.revertedWith("Coin minted with incorrect value != 100")
-    // })
+        const m = mint(10n, 0)
+        const mint_tx = {
+            commitment: m.tx_mint.cm,
+            value: m.tx_mint.value,
+            k: m.tx_mint.k,
+            s: m.tx_mint.s
+        }
+        await expect(voting.connect(worldID).registerAsWorldIDHolder(
+            worldID.address, 1234, 1234, [1234,1234,1234,1234,1234,1234,1234,1234], mint_tx
+        )).to.be.revertedWith("Coin minted with incorrect value != 100")
+    })
 
-    // it("Should penalise a malicious voter", async () => {
-    //     const social_graph = new PrivateGraph();
+    it("Should penalise a malicious voter", async () => {
+        const social_graph = new PrivateGraph();
         
-    //     const old_zcash_address = social_graph.create_address()
+        const old_zcash_address = social_graph.create_address()
 
-    //     const worldIDRegister = social_graph.registerWorldID(old_zcash_address.pk)
+        const worldIDRegister = social_graph.registerWorldID(old_zcash_address.pk)
         
-    //     const cm = worldIDRegister.tx_mint.cm
-    //     const value = worldIDRegister.tx_mint.value
-    //     const k = worldIDRegister.tx_mint.k
-    //     const s = worldIDRegister.tx_mint.s
-    //     const tx_mint = {
-    //         commitment: cm,
-    //         value: value,
-    //         k: k,
-    //         s: s
-    //     }
+        const cm = worldIDRegister.tx_mint.cm
+        const value = worldIDRegister.tx_mint.value
+        const k = worldIDRegister.tx_mint.k
+        const s = worldIDRegister.tx_mint.s
+        const tx_mint = {
+            commitment: cm,
+            value: value,
+            k: k,
+            s: s
+        }
 
-    //     const [worldID, candidate] = await hre.ethers.getSigners();
-    //     const { voting, worldcoinVerifier, voteVerifier, claimVerifier } = await loadFixture(deployVoting);
+        const [worldID, candidate] = await hre.ethers.getSigners();
+        const { voting, worldcoinVerifier, voteVerifier, claimVerifier } = await loadFixture(deployVoting);
 
-    //     // Register candidate
-    //     const userID = social_graph.registerCandidate("Jim")
-    //     await expect(voting.connect(candidate).registerAsCandidate("Jim"))
-    //         .to.emit(voting, "UserRegistered");
+        // Register candidate
+        const userID = social_graph.registerCandidate("Jim")
+        await expect(voting.connect(candidate).registerAsCandidate("Jim"))
+            .to.emit(voting, "UserRegistered");
 
-    //     // register worldID
-    //     expect(await voting.connect(worldID).registerAsWorldIDHolder(
-    //         worldID.address, 1234, 1234, [1234,1234,1234,1234,1234,1234,1234,1234], tx_mint
-    //     )).to.emit(voting, "WorldIDRegistered")
+        // register worldID
+        expect(await voting.connect(worldID).registerAsWorldIDHolder(
+            worldID.address, 1234, 1234, [1234,1234,1234,1234,1234,1234,1234,1234], tx_mint
+        )).to.emit(voting, "WorldIDRegistered")
 
-    //     // vote for user
-    //     const new_zcash_key_pair_1 = social_graph.create_address()
-    //     const new_zcash_key_pair_2 = social_graph.create_address()
+        // vote for user
+        const new_zcash_key_pair_1 = social_graph.create_address()
+        const new_zcash_key_pair_2 = social_graph.create_address()
 
-    //     const weight = 50
+        const weight = 50
 
-    //     const voted = await social_graph.vote(worldIDRegister.coin, old_zcash_address, new_zcash_key_pair_1.pk, new_zcash_key_pair_2.pk, userID, weight)
-    //     const tx_pour = {
-    //         rt: voted.tx_pour.rt,
-    //         sn_old: voted.tx_pour.sn_old,
-    //         cm_1: voted.tx_pour.new_cm_1,
-    //         cm_2: voted.tx_pour.new_cm_2,
-    //         v_pub: voted.tx_pour.v_pub,
-    //         info: voted.tx_pour.info,
-    //         // pk_sig: voted.tx_pour.key,
-    //         pk_sig: hre.ethers.encodeBytes32String("A"),
-    //         h: voted.tx_pour.h,
-    //         proof: hre.ethers.toUtf8Bytes(voted.tx_pour.proof.toString()),
-    //         // sig: voted.tx_pour.signature,
-    //         sig: hre.ethers.encodeBytes32String("B"),
-    //     }
+        const voted = await social_graph.vote(worldIDRegister.coin, old_zcash_address, new_zcash_key_pair_1.pk, new_zcash_key_pair_2.pk, userID, weight)
+        const tx_pour = {
+            rt: voted.tx_pour.rt,
+            sn_old: voted.tx_pour.sn_old,
+            cm_1: voted.tx_pour.new_cm_1,
+            cm_2: voted.tx_pour.new_cm_2,
+            v_pub: voted.tx_pour.v_pub,
+            info: voted.tx_pour.info,
+            // pk_sig: voted.tx_pour.key,
+            pk_sig: hre.ethers.encodeBytes32String("A"),
+            h: voted.tx_pour.h,
+            proof: hre.ethers.toUtf8Bytes(voted.tx_pour.proof.toString()),
+            // sig: voted.tx_pour.signature,
+            sig: hre.ethers.encodeBytes32String("B"),
+        }
 
-    //     expect(await voting.connect(worldID).recommendCandidate (
-    //         tx_pour, weight, candidate.address
-    //     )).to.emit(voting, "CandidateRecommended")
+        expect(await voting.connect(worldID).recommendCandidate (
+            tx_pour, weight, candidate.address
+        )).to.emit(voting, "CandidateRecommended")
 
 
-    //     const user = await voting.users(candidate.address)
-    //     expect(user.v_in).to.be.equal(50)
-    //     expect(user.numberOfVotes).to.equal(1);
+        const user = await voting.users(candidate.address)
+        expect(user.v_in).to.be.equal(50)
+        expect(user.numberOfVotes).to.equal(1);
         
-    //     // Penalize the candidate
-    //     await expect(voting.connect(candidate).penalise())
-    //         .to.emit(voting, "Penalised")
+        // Penalize the candidate
+        await expect(voting.connect(candidate).penalise())
+            .to.emit(voting, "Penalised")
 
-    //     const candidateTree = await voting.candidateTrees(candidate.address);
-    //     const userAfterPenalise = await voting.users(candidate.address);
+        const candidateTree = await voting.candidateTrees(candidate.address);
+        const userAfterPenalise = await voting.users(candidate.address);
 
-    //     expect(userAfterPenalise.v_in).to.equal(0);
-    //     expect(userAfterPenalise.numberOfVotes).to.equal(0);
-    // })
+        expect(userAfterPenalise.v_in).to.equal(0);
+        expect(userAfterPenalise.numberOfVotes).to.equal(0);
+    })
 
     it("Should recommend a candidate", async () => {   
         const social_graph = new PrivateGraph()
