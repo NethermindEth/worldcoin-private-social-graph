@@ -132,8 +132,16 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
      *      finally circuit and zk proof are correct.
      */
     function verifyPour(Pour calldata tx_pour, bool called_by_vote) public view returns (bool) {
-        if (voteNullifiersExists[tx_pour.sn_old] || !voteMerkleRootExists[tx_pour.rt]) {
-            return false;
+        // if (voteNullifiersExists[tx_pour.sn_old] || !voteMerkleRootExists[tx_pour.rt]) {
+        //     return false;
+        // }
+
+        if(voteNullifiersExists[tx_pour.sn_old]) {
+            revert("Nullifier error");
+        }
+
+        if(!voteMerkleRootExists[tx_pour.rt]) {
+            revert("rt error");
         }
 
         // compute h_sig = poseidon(pk_sig)
