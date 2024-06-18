@@ -8,8 +8,8 @@ import { PoseidonT2 } from "@poseidon/contracts/PoseidonT2.sol";
 import { ABDKMath64x64 } from "@abdk-library/ABDKMath64x64.sol";
 import { BinaryIMT, BinaryIMTData } from "../lib/zk-kit.solidity/packages/imt/contracts/BinaryIMT.sol";
 import { SignatureChecker } from "@openzeppelin/contracts/utils/cryptography/SignatureChecker.sol";
-import {UltraVerifier as ClaimUltraVerifier} from "./claim-plonk-verifier.sol";
-import {UltraVerifier as VoteUltraVerifier} from "./vote-plonk-verifier.sol";
+import { UltraVerifier as ClaimUltraVerifier } from "./claim-plonk-verifier.sol";
+import { UltraVerifier as VoteUltraVerifier } from "./vote-plonk-verifier.sol";
 
 contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
     FakeWorldcoinVerifier public immutable worldIDVerificationContract;
@@ -31,11 +31,15 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
 
     /**
      * @notice sets the state contracts used for verification of world ID and zk circuits
-     * @param _worldcoinVerifier - contract address of the world ID verification
+     * @param _worldIDVerificationContract - contract address of the world ID verification
      * @param _voteVerifier - contract address of the vote circuit solidity verifier
      * @param _claimVerifier - contract address of the claim circuit solidity verifier
      */
-    constructor(FakeWorldcoinVerifier _worldIDVerificationContract, VoteUltraVerifier _voteVerifier, ClaimUltraVerifier _claimVerifier) {
+    constructor(
+        FakeWorldcoinVerifier _worldIDVerificationContract,
+        VoteUltraVerifier _voteVerifier,
+        ClaimUltraVerifier _claimVerifier
+    ) {
         // setup worldID verification
         worldIDVerificationContract = _worldIDVerificationContract;
         // setup tree and initialise with default zeros and push init root to history
