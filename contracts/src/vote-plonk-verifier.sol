@@ -4,7 +4,7 @@
 pragma solidity >=0.8.4;
 
 library UltraVerificationKey {
-    function verificationKeyHash() internal pure returns(bytes32) {
+    function verificationKeyHash() internal pure returns (bytes32) {
         return 0x27ee1ec6e66d11e577f6d64e687d7205cd03535a71ed8844c1e565fd8a2ac8f5;
     }
 
@@ -62,10 +62,10 @@ library UltraVerificationKey {
             mstore(add(_vk, 0x620), 0x2a72dc044037b406197678ac8aee19b6d55cbedeb3866cbbf82be263e6576d48) // vk.ID4.y
             mstore(add(_vk, 0x640), 0x00) // vk.contains_recursive_proof
             mstore(add(_vk, 0x660), 0) // vk.recursive_proof_public_input_indices
-            mstore(add(_vk, 0x680), 0x260e01b251f6f1c7e7ff4e580791dee8ea51d87a358e038b4efe30fac09383c1) // vk.g2_x.X.c1 
-            mstore(add(_vk, 0x6a0), 0x0118c4d5b837bcc2bc89b5b398b5974e9f5944073b32078b7e231fec938883b0) // vk.g2_x.X.c0 
-            mstore(add(_vk, 0x6c0), 0x04fc6369f7110fe3d25156c1bb9a72859cf2a04641f99ba4ee413c80da6a5fe4) // vk.g2_x.Y.c1 
-            mstore(add(_vk, 0x6e0), 0x22febda3c0c0632a56475b4214e5615e11e6dd3f96e6cea2854a87d4dacc5e55) // vk.g2_x.Y.c0 
+            mstore(add(_vk, 0x680), 0x260e01b251f6f1c7e7ff4e580791dee8ea51d87a358e038b4efe30fac09383c1) // vk.g2_x.X.c1
+            mstore(add(_vk, 0x6a0), 0x0118c4d5b837bcc2bc89b5b398b5974e9f5944073b32078b7e231fec938883b0) // vk.g2_x.X.c0
+            mstore(add(_vk, 0x6c0), 0x04fc6369f7110fe3d25156c1bb9a72859cf2a04641f99ba4ee413c80da6a5fe4) // vk.g2_x.Y.c1
+            mstore(add(_vk, 0x6e0), 0x22febda3c0c0632a56475b4214e5615e11e6dd3f96e6cea2854a87d4dacc5e55) // vk.g2_x.Y.c0
             mstore(_omegaInverseLoc, 0x036853f083780e87f8d7c71d111119c57dbe118c22d5ad707a82317466c5174c) // vk.work_root_inverse
         }
     }
@@ -314,7 +314,8 @@ abstract contract BaseUltraVerifier {
     uint256 internal constant QUOTIENT_EVAL_LOC = 0x3660;
     uint256 internal constant ZERO_POLY_INVERSE_LOC = 0x3680;
 
-    // when hashing public inputs we use memory at NU_CHALLENGE_INPUT_LOC_A, as the hash input size is unknown at compile time
+    // when hashing public inputs we use memory at NU_CHALLENGE_INPUT_LOC_A, as the hash input size is unknown at
+    // compile time
     uint256 internal constant NU_CHALLENGE_INPUT_LOC_A = 0x36a0;
     uint256 internal constant NU_CHALLENGE_INPUT_LOC_B = 0x36c0;
     uint256 internal constant NU_CHALLENGE_INPUT_LOC_C = 0x36e0;
@@ -368,10 +369,10 @@ abstract contract BaseUltraVerifier {
      */
     function loadVerificationKey(uint256 _vk, uint256 _omegaInverseLoc) internal pure virtual;
 
-    constructor() { 
+    constructor() {
         loadVerificationKey(N_LOC, OMEGA_INVERSE_LOC);
 
-        // We verify that all of the EC points in the verification key lie on the bn128 curve. 
+        // We verify that all of the EC points in the verification key lie on the bn128 curve.
         assembly {
             let q := 21888242871839275222246405745257275088696311157297823662689037894645226208583 // EC group order
 
@@ -498,7 +499,7 @@ abstract contract BaseUltraVerifier {
                 let xx := mulmod(x, x, q)
                 // validate on curve
                 success := and(success, eq(mulmod(y, y, q), addmod(mulmod(x, xx, q), 3, q)))
-            } 
+            }
             // VALIDATE TABLE2
             {
                 let x := mload(TABLE2_X_LOC)
@@ -506,7 +507,7 @@ abstract contract BaseUltraVerifier {
                 let xx := mulmod(x, x, q)
                 // validate on curve
                 success := and(success, eq(mulmod(y, y, q), addmod(mulmod(x, xx, q), 3, q)))
-            } 
+            }
             // VALIDATE TABLE3
             {
                 let x := mload(TABLE3_X_LOC)
@@ -514,7 +515,7 @@ abstract contract BaseUltraVerifier {
                 let xx := mulmod(x, x, q)
                 // validate on curve
                 success := and(success, eq(mulmod(y, y, q), addmod(mulmod(x, xx, q), 3, q)))
-            } 
+            }
             // VALIDATE TABLE4
             {
                 let x := mload(TABLE4_X_LOC)
@@ -522,7 +523,7 @@ abstract contract BaseUltraVerifier {
                 let xx := mulmod(x, x, q)
                 // validate on curve
                 success := and(success, eq(mulmod(y, y, q), addmod(mulmod(x, xx, q), 3, q)))
-            } 
+            }
             // VALIDATE TABLE_TYPE
             {
                 let x := mload(TABLE_TYPE_X_LOC)
@@ -733,13 +734,15 @@ abstract contract BaseUltraVerifier {
                  * Generate eta challenge
                  */
                 mstore(PUBLIC_INPUTS_HASH_LOCATION, challenge)
-                // The public input location is stored at 0x24, we then add 0x24 to skip selector and the length of public inputs
+                // The public input location is stored at 0x24, we then add 0x24 to skip selector and the length of
+                // public inputs
                 let public_inputs_start := add(calldataload(0x24), 0x24)
                 // copy the public inputs over
                 let public_input_size := mul(mload(NUM_INPUTS_LOC), 0x20)
                 calldatacopy(add(PUBLIC_INPUTS_HASH_LOCATION, 0x20), public_inputs_start, public_input_size)
 
-                // copy W1, W2, W3 into challenge. Each point is 0x40 bytes, so load 0xc0 = 3 * 0x40 bytes (ETA input length)
+                // copy W1, W2, W3 into challenge. Each point is 0x40 bytes, so load 0xc0 = 3 * 0x40 bytes (ETA input
+                // length)
                 let w_start := add(calldataload(0x04), 0x24)
                 calldatacopy(add(add(PUBLIC_INPUTS_HASH_LOCATION, 0x20), public_input_size), w_start, ETA_INPUT_LENGTH)
 
@@ -830,7 +833,8 @@ abstract contract BaseUltraVerifier {
                 let p_clone := p // move p to the front of the stack
                 let valid_inputs := true
 
-                // Load the starting point of the public inputs (jump over the selector and the length of public inputs [0x24])
+                // Load the starting point of the public inputs (jump over the selector and the length of public inputs
+                // [0x24])
                 let public_inputs_ptr := add(calldataload(0x24), 0x24)
 
                 // endpoint_ptr = public_inputs_ptr + num_inputs * 0x20. // every public input is 0x20 bytes
@@ -842,7 +846,7 @@ abstract contract BaseUltraVerifier {
                 let root_2 := mulmod(beta, 0x0c, p_clone)
                 // @note 0x05 + 0x07 == 0x0c == external coset generator
 
-                for {} lt(public_inputs_ptr, endpoint_ptr) { public_inputs_ptr := add(public_inputs_ptr, 0x20) } {
+                for { } lt(public_inputs_ptr, endpoint_ptr) { public_inputs_ptr := add(public_inputs_ptr, 0x20) } {
                     /**
                      * input = public_input[i]
                      * valid_inputs &= input < p
@@ -852,7 +856,6 @@ abstract contract BaseUltraVerifier {
                      * root_1 *= ω
                      * root_2 *= ω
                      */
-
                     let input := calldataload(public_inputs_ptr)
                     valid_inputs := and(valid_inputs, lt(input, p_clone))
                     let temp := addmod(input, gamma, p_clone)
@@ -884,7 +887,7 @@ abstract contract BaseUltraVerifier {
                 {
                     let exponent := mload(N_LOC)
                     let count := 1
-                    for {} lt(count, exponent) { count := add(count, count) } {
+                    for { } lt(count, exponent) { count := add(count, count) } {
                         delta_numerator := mulmod(delta_numerator, delta_numerator, p)
                     }
                 }
@@ -918,7 +921,6 @@ abstract contract BaseUltraVerifier {
                  * l_end_denominator = accumulating_root^2 * work_root * zeta - 1
                  * Note: l_end_denominator term contains a term \omega^5 to cut out 5 roots of unity from vanishing poly
                  */
-
                 let zeta := mload(C_ZETA_LOC)
 
                 // compute zeta^n, where n is a power of 2
@@ -927,7 +929,7 @@ abstract contract BaseUltraVerifier {
                     // pow_small
                     let exponent := mload(N_LOC)
                     let count := 1
-                    for {} lt(count, exponent) { count := add(count, count) } {
+                    for { } lt(count, exponent) { count := add(count, count) } {
                         vanishing_numerator := mulmod(vanishing_numerator, vanishing_numerator, p)
                     }
                 }
@@ -1186,7 +1188,8 @@ abstract contract BaseUltraVerifier {
                 numerator := addmod(numerator, sub(p, temp0), p)
 
                 /**
-                 * Goal: denominator = z_lookup(zω)*[s(z) + βs(zω) + γ(1 + β)] - [z_lookup(zω) - [γ(1 + β)]^{n-k}]*α²L_end(z)
+                 * Goal: denominator = z_lookup(zω)*[s(z) + βs(zω) + γ(1 + β)] - [z_lookup(zω) - [γ(1 +
+                 * β)]^{n-k}]*α²L_end(z)
                  * note: delta_factor = [γ(1 + β)]^{n-k}
                  * denominator = s(z) + βs(zω) + γ(β + 1)
                  * temp1 = α²L_end(z)
@@ -1220,39 +1223,46 @@ abstract contract BaseUltraVerifier {
                 /**
                  * The basic arithmetic gate identity in standard plonk is as follows.
                  * (w_1 . w_2 . q_m) + (w_1 . q_1) + (w_2 . q_2) + (w_3 . q_3) + (w_4 . q_4) + q_c = 0
-                 * However, for Ultraplonk, we extend this to support "passing" wires between rows (shown without alpha scaling below):
-                 * q_arith * ( ( (-1/2) * (q_arith - 3) * q_m * w_1 * w_2 + q_1 * w_1 + q_2 * w_2 + q_3 * w_3 + q_4 * w_4 + q_c ) +
+                 * However, for Ultraplonk, we extend this to support "passing" wires between rows (shown without alpha
+                 * scaling below):
+                 * q_arith * ( ( (-1/2) * (q_arith - 3) * q_m * w_1 * w_2 + q_1 * w_1 + q_2 * w_2 + q_3 * w_3 + q_4 *
+                 * w_4 + q_c ) +
                  * (q_arith - 1)*( α * (q_arith - 2) * (w_1 + w_4 - w_1_omega + q_m) + w_4_omega) ) = 0
                  *
                  * This formula results in several cases depending on q_arith:
                  * 1. q_arith == 0: Arithmetic gate is completely disabled
                  *
-                 * 2. q_arith == 1: Everything in the minigate on the right is disabled. The equation is just a standard plonk equation
+                 * 2. q_arith == 1: Everything in the minigate on the right is disabled. The equation is just a standard
+                 * plonk equation
                  * with extra wires: q_m * w_1 * w_2 + q_1 * w_1 + q_2 * w_2 + q_3 * w_3 + q_4 * w_4 + q_c = 0
                  *
                  * 3. q_arith == 2: The (w_1 + w_4 - ...) term is disabled. THe equation is:
                  * (1/2) * q_m * w_1 * w_2 + q_1 * w_1 + q_2 * w_2 + q_3 * w_3 + q_4 * w_4 + q_c + w_4_omega = 0
                  * It allows defining w_4 at next index (w_4_omega) in terms of current wire values
                  *
-                 * 4. q_arith == 3: The product of w_1 and w_2 is disabled, but a mini addition gate is enabled. α allows us to split
+                 * 4. q_arith == 3: The product of w_1 and w_2 is disabled, but a mini addition gate is enabled. α
+                 * allows us to split
                  * the equation into two:
                  *
                  * q_1 * w_1 + q_2 * w_2 + q_3 * w_3 + q_4 * w_4 + q_c + 2 * w_4_omega = 0
                  * and
                  * w_1 + w_4 - w_1_omega + q_m = 0  (we are reusing q_m here)
                  *
-                 * 5. q_arith > 3: The product of w_1 and w_2 is scaled by (q_arith - 3), while the w_4_omega term is scaled by (q_arith - 1).
+                 * 5. q_arith > 3: The product of w_1 and w_2 is scaled by (q_arith - 3), while the w_4_omega term is
+                 * scaled by (q_arith - 1).
                  * The equation can be split into two:
                  *
-                 * (q_arith - 3)* q_m * w_1 * w_ 2 + q_1 * w_1 + q_2 * w_2 + q_3 * w_3 + q_4 * w_4 + q_c + (q_arith - 1) * w_4_omega = 0
+                 * (q_arith - 3)* q_m * w_1 * w_ 2 + q_1 * w_1 + q_2 * w_2 + q_3 * w_3 + q_4 * w_4 + q_c + (q_arith - 1)
+                 * * w_4_omega = 0
                  * and
                  * w_1 + w_4 - w_1_omega + q_m = 0
                  *
-                 * The problem that q_m is used both in both equations can be dealt with by appropriately changing selector values at
-                 * the next gate. Then we can treat (q_arith - 1) as a simulated q_6 selector and scale q_m to handle (q_arith - 3) at
+                 * The problem that q_m is used both in both equations can be dealt with by appropriately changing
+                 * selector values at
+                 * the next gate. Then we can treat (q_arith - 1) as a simulated q_6 selector and scale q_m to handle
+                 * (q_arith - 3) at
                  * product.
                  */
-
                 let w1q1 := mulmod(mload(W1_EVAL_LOC), mload(Q1_EVAL_LOC), p)
                 let w2q2 := mulmod(mload(W2_EVAL_LOC), mload(Q2_EVAL_LOC), p)
                 let w3q3 := mulmod(mload(W3_EVAL_LOC), mload(Q3_EVAL_LOC), p)
@@ -1299,7 +1309,8 @@ abstract contract BaseUltraVerifier {
                     )
 
                 // if q_arith == 2 OR q_arith == 3 we add the 4th wire of the NEXT gate into the arithmetic identity
-                // N.B. if q_arith > 2, this wire value will be scaled by (q_arith - 1) relative to the other gate wires!
+                // N.B. if q_arith > 2, this wire value will be scaled by (q_arith - 1) relative to the other gate
+                // wires!
                 // alpha_base * q_arith * (identity + (q_arith - 1) * (w_4_omega + extra_small_addition_gate_identity))
                 mstore(
                     ARITHMETIC_IDENTITY,
@@ -1445,37 +1456,14 @@ abstract contract BaseUltraVerifier {
                             mulmod(x_diff, x_diff, p),
                             p
                         ),
-                        addmod(
-                            sub(
-                                p,
-                                addmod(y2_sqr, y1_sqr, p)
-                            ),
-                            addmod(y1y2, y1y2, p),
-                            p
-                        ),
+                        addmod(sub(p, addmod(y2_sqr, y1_sqr, p)), addmod(y1y2, y1y2, p), p),
                         p
                     )
                 x_add_identity :=
-                    mulmod(
-                        mulmod(
-                            x_add_identity,
-                            addmod(
-                                1,
-                                sub(p, mload(QM_EVAL_LOC)),
-                                p
-                            ),
-                            p
-                        ),
-                        mload(C_ALPHA_BASE_LOC),
-                        p
-                    )
+                    mulmod(mulmod(x_add_identity, addmod(1, sub(p, mload(QM_EVAL_LOC)), p), p), mload(C_ALPHA_BASE_LOC), p)
 
                 // q_elliptic * (x3 + x2 + x1)(x2 - x1)(x2 - x1) - y2^2 - y1^2 + 2(y2y1)*q_sign = 0
-                let y1_plus_y3 := addmod(
-                    mload(Y1_EVAL_LOC),
-                    mload(Y3_EVAL_LOC),
-                    p
-                )
+                let y1_plus_y3 := addmod(mload(Y1_EVAL_LOC), mload(Y3_EVAL_LOC), p)
                 let y_diff := addmod(mulmod(mload(Y2_EVAL_LOC), mload(QSIGN_LOC), p), sub(p, mload(Y1_EVAL_LOC)), p)
                 let y_add_identity :=
                     addmod(
@@ -1581,9 +1569,9 @@ abstract contract BaseUltraVerifier {
                      * limb_subproduct += w_1_omega * w_2_omega
                      * non_native_field_gate_1 = (limb_subproduct + w_3 + w_4) * q_3
                      * non_native_field_gate_3 = (limb_subproduct + w_4 - (w_3_omega + w_4_omega)) * q_m
-                     * non_native_field_identity = (non_native_field_gate_1 + non_native_field_gate_2 + non_native_field_gate_3) * q_2
+                     * non_native_field_identity = (non_native_field_gate_1 + non_native_field_gate_2 +
+                     * non_native_field_gate_3) * q_2
                      */
-
                     let limb_subproduct :=
                         addmod(
                             mulmod(mload(W1_EVAL_LOC), mload(W2_OMEGA_EVAL_LOC), p),
@@ -1703,7 +1691,6 @@ abstract contract BaseUltraVerifier {
                      *
                      * memory_record_check -= w_4;
                      */
-
                     let memory_record_check := mulmod(mload(W3_EVAL_LOC), mload(C_ETA_LOC), p)
                     memory_record_check := addmod(memory_record_check, mload(W2_EVAL_LOC), p)
                     memory_record_check := mulmod(memory_record_check, mload(C_ETA_LOC), p)
@@ -1727,7 +1714,8 @@ abstract contract BaseUltraVerifier {
                     let adjacent_values_match_if_adjacent_indices_match :=
                         mulmod(record_delta, addmod(1, sub(p, index_delta), p), p)
 
-                    // AUX_ROM_CONSISTENCY_EVALUATION = ((adjacent_values_match_if_adjacent_indices_match * alpha) + index_is_monotonically_increasing) * alpha + partial_record_check
+                    // AUX_ROM_CONSISTENCY_EVALUATION = ((adjacent_values_match_if_adjacent_indices_match * alpha) +
+                    // index_is_monotonically_increasing) * alpha + partial_record_check
                     mstore(
                         AUX_ROM_CONSISTENCY_EVALUATION,
                         addmod(
@@ -1764,7 +1752,8 @@ abstract contract BaseUltraVerifier {
 
                         // value_delta = w_3_omega - w_3
                         let value_delta := addmod(mload(W3_OMEGA_EVAL_LOC), sub(p, mload(W3_EVAL_LOC)), p)
-                        //  adjacent_values_match_if_adjacent_indices_match_and_next_access_is_a_read_operation = (1 - index_delta) * value_delta * (1 - next_gate_access_type);
+                        //  adjacent_values_match_if_adjacent_indices_match_and_next_access_is_a_read_operation = (1 -
+                        // index_delta) * value_delta * (1 - next_gate_access_type);
 
                         let adjacent_values_match_if_adjacent_indices_match_and_next_access_is_a_read_operation :=
                             mulmod(
@@ -1779,7 +1768,8 @@ abstract contract BaseUltraVerifier {
                          * access_type = w_4 - partial_record_check
                          * access_check = access_type^2 - access_type
                          * next_gate_access_type_is_boolean = next_gate_access_type^2 - next_gate_access_type
-                         * RAM_consistency_check_identity = adjacent_values_match_if_adjacent_indices_match_and_next_access_is_a_read_operation;
+                         * RAM_consistency_check_identity =
+                         * adjacent_values_match_if_adjacent_indices_match_and_next_access_is_a_read_operation;
                          * RAM_consistency_check_identity *= alpha;
                          * RAM_consistency_check_identity += index_is_monotonically_increasing;
                          * RAM_consistency_check_identity *= alpha;
@@ -1787,7 +1777,6 @@ abstract contract BaseUltraVerifier {
                          * RAM_consistency_check_identity *= alpha;
                          * RAM_consistency_check_identity += access_check;
                          */
-
                         let access_type := addmod(mload(W4_EVAL_LOC), sub(p, partial_record_check), p)
                         let access_check := mulmod(access_type, addmod(access_type, sub(p, 1), p), p)
                         let next_gate_access_type_is_boolean :=
@@ -1967,7 +1956,8 @@ abstract contract BaseUltraVerifier {
                 mstore8(0x20, 0x1d)
                 mstore(C_V29_LOC, mod(keccak256(0x00, 0x21), p))
 
-                // @follow-up - Why are both v29 and v30 using appending 0x1d to the prior challenge and hashing, should it not change?
+                // @follow-up - Why are both v29 and v30 using appending 0x1d to the prior challenge and hashing, should
+                // it not change?
                 mstore8(0x20, 0x1d)
                 challenge := keccak256(0x00, 0x21)
                 mstore(C_V30_LOC, mod(challenge, p))
@@ -2209,7 +2199,7 @@ abstract contract BaseUltraVerifier {
             success := and(success, staticcall(gas(), 6, ACCUMULATOR_X_LOC, 0x80, ACCUMULATOR_X_LOC, 0x40))
 
             // ACCUMULATE Q3
-            
+
             // Verification key fields verified to be on curve at contract deployment
             mstore(0x00, mload(Q3_X_LOC))
             mstore(0x20, mload(Q3_Y_LOC))
@@ -2220,7 +2210,7 @@ abstract contract BaseUltraVerifier {
             success := and(success, staticcall(gas(), 6, ACCUMULATOR_X_LOC, 0x80, ACCUMULATOR_X_LOC, 0x40))
 
             // ACCUMULATE Q4
-            
+
             // Verification key fields verified to be on curve at contract deployment
             mstore(0x00, mload(Q4_X_LOC))
             mstore(0x20, mload(Q4_Y_LOC))
@@ -2231,7 +2221,7 @@ abstract contract BaseUltraVerifier {
             success := and(success, staticcall(gas(), 6, ACCUMULATOR_X_LOC, 0x80, ACCUMULATOR_X_LOC, 0x40))
 
             // ACCUMULATE QM
-            
+
             // Verification key fields verified to be on curve at contract deployment
             mstore(0x00, mload(QM_X_LOC))
             mstore(0x20, mload(QM_Y_LOC))
@@ -2771,7 +2761,15 @@ contract UltraVerifier is BaseUltraVerifier {
         return UltraVerificationKey.verificationKeyHash();
     }
 
-    function loadVerificationKey(uint256 vk, uint256 _omegaInverseLoc) internal pure virtual override(BaseUltraVerifier) {
+    function loadVerificationKey(
+        uint256 vk,
+        uint256 _omegaInverseLoc
+    )
+        internal
+        pure
+        virtual
+        override(BaseUltraVerifier)
+    {
         UltraVerificationKey.loadVerificationKey(vk, _omegaInverseLoc);
     }
 }
