@@ -12,9 +12,9 @@ import "../../circuits/votePour/contract/votePour/plonk_vk.sol" as voteCircuit;
 import "../../circuits/claimPour/contract/claimPour/plonk_vk.sol" as claimCircuit;
 
 contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
-    WorldcoinVerifier worldIDVerificationContract;
-    claimCircuit.UltraVerifier claimVerifier;
-    voteCircuit.UltraVerifier voteVerifier;
+    WorldcoinVerifier immutable worldIDVerificationContract;
+    claimCircuit.UltraVerifier immutable claimVerifier;
+    voteCircuit.UltraVerifier immutable voteVerifier;
 
     /// @notice Event for user registration as World ID holder or Candidate
     event UserRegistered(address indexed user, Status status);
@@ -31,9 +31,9 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
      * @param _voteVerifier - contract address of the vote circuit solidity verifier
      * @param _claimVerifier - contract address of the claim circuit solidity verifier
      */
-    constructor(WorldcoinVerifier _worldcoinVerifier, address _voteVerifier, address _claimVerifier) {
+    constructor(WorldcoinVerifier _worldIDVerificationContract, address _voteVerifier, address _claimVerifier) {
         // setup worldID verification
-        worldIDVerificationContract = _worldcoinVerifier;
+        worldIDVerificationContract = _worldIDVerificationContract;
         // setup tree and initialise with default zeros and push init root to history
         BinaryIMT.initWithDefaultZeroes(VotingTree, depth);
         BinaryIMT.initWithDefaultZeroes(RewardsTree, depth);
@@ -82,7 +82,7 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
         BinaryIMT.initWithDefaultZeroes(candidateTrees[msg.sender], depth);
         candidateTreeNonEmpty[msg.sender] = true;
         // add user to user map
-        users[msg.sender] = User(_name, 0, 0, Status.CANDIDATE, 0, true);
+        users[msg.sender] = User(_name, 0, 0, Status.CANDIDATE, 0);
         emit UserRegistered(msg.sender, Status.CANDIDATE);
     }
 
@@ -133,7 +133,7 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
         // compute h_sig = poseidon(pk_sig)
         uint256 h_sig = PoseidonT2.hash([uint256(tx_pour.pk_sig)]);
 
-        bytes encodeData = abiEncodeTxPourParams(tx_pour, h_sig);
+        bytes memory encodeData = abiEncodeTxPourParams(tx_pour, h_sig);
         isValidSignature(keccak256(encodeData), tx_pour.sig);
         // Verify signature
         require(verifySignature(msg.sender, keccak256(encodeData), tx_pour.sig));
@@ -201,7 +201,7 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
         users[msg.sender].status = Status.VERIFIED_IDENTITIY;
         uint256 c_epoch = (block.number / 50_064) + 1;
         users[msg.sender].epochV = c_epoch;
-        rewards_per_epoch[c_epoch].sum += users[msg.sender].v_in;
+        rewardsPerEpoch[c_epoch].sum += users[msg.sender].v_in;
         emit CandidateVerified(msg.sender, Status.VERIFIED_IDENTITIY);
     }
 
@@ -221,7 +221,7 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
         uint256 epoch = users[_user].epochV;
         require(c_epoch > epoch, "user claiming rewards for verified epoch less than current epoch");
         //check if public parameters are valid
-        require(tx_pour.v_pub == rewards_per_epoch[epoch].sum);
+        require(tx_pour.v_pub == rewardsPerEpoch[epoch].sum);
         require(verifyPour(tx_pour, false), "pour tx failed to verify");
 
         userIDNullifiers[_user].push(tx_pour.sn_old);
@@ -241,9 +241,9 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
         }
 
         uint256 i = users[_user].epochV;
-        rewards_per_epoch[i].claimed += users[_user].v_in;
-        if (rewards_per_epoch[i].sum == rewards_per_epoch[i].claimed) {
-            delete(rewards_per_epoch[i]);
+        rewardsPerEpoch[i].claimed += users[_user].v_in;
+        if (rewardsPerEpoch[i].sum == rewardsPerEpoch[i].claimed) {
+            delete(rewardsPerEpoch[i]);
         }
     }
 
@@ -267,12 +267,12 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
     /**
      * @notice verify signature
      */
-    function verifySignature(address _signer, bytes32 _hash, bytes _sig) internal returns (bool) {
+    function verifySignature(address _signer, bytes32 _hash, bytes memory _sig) internal view returns (bool) {
         bytes32 prefixedHashMessage = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", _hash));
         return SignatureChecker.isValidSignatureNow(_signer, prefixedHashMessage, _sig);
     }
 
-    function abiEncodeTxPourParams(Pour memory _txPour, uint256 h_sig) private view returns (bytes memory) {
+    function abiEncodeTxPourParams(Pour memory _txPour, uint256 h_sig) private pure returns (bytes memory) {
         return abi.encodePacked(
             _txPour.rt,
             _txPour.sn_old,
@@ -285,8 +285,7 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
             h_sig,
             _txPour.proof,
             _txPour.info
-        )
+        );
         // should sign chain id, contract address, nonce
-        ;
     }
 }

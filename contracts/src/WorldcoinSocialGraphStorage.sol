@@ -4,15 +4,20 @@ pragma solidity ^0.8.13;
 import { BinaryIMT, BinaryIMTData } from "../lib/zk-kit.solidity/packages/imt/contracts/BinaryIMT.sol";
 
 contract WorldcoinSocialGraphStorage {
-    uint256 depth = 64;
-    uint256 internal x = 600;
+    uint256 internal constant depth = 64;
+    uint256 internal constant x = 600;
+    BinaryIMTData VotingTree;
+    BinaryIMTData RewardsTree;
+    uint256[] voteNullifiers;
+    uint256[] rewardsNullifiers;
+    uint256[] voteMerkleRoot;
+    uint256[] rewardsMerkleRoot;
 
     enum Status {
         UNREGISTERED,
         WORLD_ID_HOLDER,
         CANDIDATE,
-        VERIFIED_IDENTITIY,
-        REJECTED
+        VERIFIED_IDENTITIY
     }
 
     struct User {
@@ -29,26 +34,6 @@ contract WorldcoinSocialGraphStorage {
         // total number of voting power claimed by the voters
         uint256 claimed;
     }
-
-    mapping(uint256 => Rewards) rewards_per_epoch;
-
-    mapping(address => BinaryIMTData) candidateTrees;
-    mapping(address => bool) candidateTreeNonEmpty;
-    BinaryIMTData VotingTree;
-    BinaryIMTData RewardsTree;
-
-    mapping(address => uint256[]) userIDNullifiers;
-    mapping(address => uint256) sizeOfUserIDNullifiers;
-    uint256[] voteNullifiers;
-    mapping(uint256 => bool) public voteNullifiersExists;
-    uint256[] rewardsNullifiers;
-
-    mapping(address => User) internal users;
-
-    mapping(address => uint256[]) userIDMerkleRoot;
-    uint256[] voteMerkleRoot;
-    mapping(uint256 => bool) voteMerkleRootExists;
-    uint256[] rewardsMerkleRoot;
 
     // Mint transaction
     struct Mint {
@@ -71,4 +56,14 @@ contract WorldcoinSocialGraphStorage {
         bytes proof;
         bytes sig;
     }
+
+    mapping(uint256 => Rewards) rewardsPerEpoch;
+    mapping(address => BinaryIMTData) candidateTrees;
+    mapping(address => bool) candidateTreeNonEmpty;
+    mapping(address => uint256[]) userIDNullifiers;
+    mapping(address => uint256) sizeOfUserIDNullifiers;
+    mapping(uint256 => bool) public voteNullifiersExists;
+    mapping(address => User) internal users;
+    mapping(address => uint256[]) userIDMerkleRoot;
+    mapping(uint256 => bool) voteMerkleRootExists;
 }
