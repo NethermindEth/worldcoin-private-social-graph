@@ -32,7 +32,7 @@ contract WorldcoinSocialGraphStorage {
 
     mapping(uint256 => Rewards) rewards_per_epoch;
 
-    mapping(address => BinaryIMTData) candidateTrees;
+    mapping(address => BinaryIMTData) public candidateTrees;
     mapping(address => bool) candidateTreeNonEmpty;
     BinaryIMTData VotingTree;
     BinaryIMTData RewardsTree;

@@ -65,7 +65,7 @@ export type Address = {
 export class Candidate {
     readonly userID: number
     readonly name: string
-    readonly epochV: number
+    public epochV: number
     public status: string
     public candidateTree: Tree
     public v_in: number

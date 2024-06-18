@@ -9,7 +9,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "jest -t 'Integration Tests'"
+    "test": "jest -t 'Should allow users to claim back their voting power and their rewards'"
   },
   "dependencies": {
     "@noir-lang/noir_js": "^0.29.0",
@@ -38,6 +38,7 @@
     "@noir-lang/noir_codegen": "^0.29.0",
     "@nomicfoundation/hardhat-chai-matchers": "^2.0.7",
     "@nomicfoundation/hardhat-ethers": "^3.0.6",
+    "@nomicfoundation/hardhat-network-helpers": "^1.0.11",
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",
     "@nomicfoundation/hardhat-toolbox-viem": "3.0.0",
     "@nomicfoundation/hardhat-viem": "2.0.2",

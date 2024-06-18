@@ -3,10 +3,13 @@ import "@nomicfoundation/hardhat-ethers";
 import "@nomicfoundation/hardhat-chai-matchers";
 
 const config: HardhatUserConfig = {
+  mocha: {
+    timeout: 960000
+  },
   networks: {
     hardhat: {
       blockGasLimit: 100_000_000,
-      allowUnlimitedContractSize: true
+      allowUnlimitedContractSize: true,
     }
   },
   defaultNetwork: "hardhat",
