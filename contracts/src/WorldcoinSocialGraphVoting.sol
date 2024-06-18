@@ -7,8 +7,8 @@ import {PoseidonT4} from "../lib/poseidon-solidity/contracts/PoseidonT4.sol";
 import {PoseidonT2} from "../lib/poseidon-solidity/contracts/PoseidonT2.sol";
 import {ABDKMath64x64} from "../lib/abdk-libraries-solidity/ABDKMath64x64.sol";
 import {BinaryIMT, BinaryIMTData} from "../lib/zk-kit.solidity/packages/imt/contracts/BinaryIMT.sol";
-import {UltraVerifier as ClaimUltraVerifier} from "./claim-plonk-verifier.sol";
-import {UltraVerifier as VoteUltraVerifier} from "./vote-plonk-verifier.sol";
+import {UltraVerifier as ClaimUltraVerifier} from "./claim_plonk_vk.sol";
+import {UltraVerifier as VoteUltraVerifier} from "./vote_plonk_vk.sol";
 import {IWorldcoinVerifier} from "./interfaces/IWorldcoinVerifier.sol";
 // import {UltraVerifier as VoteUltraVerifier} from "./plonk_vk.sol";
 
@@ -157,11 +157,11 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
 
         // TODO: FIX VERIFICATION ERROR
         if (!called_by_vote) {
-            return true;
+            // return true;
             // return (claimVerifier.verify(tx_pour.proof, publicInputs));
         } else {
-            // return (voteVerifier.verify(tx_pour.proof, publicInputs));
-            return true;
+            return (voteVerifier.verify(tx_pour.proof, publicInputs));
+            // return true;
         }
     }
 
