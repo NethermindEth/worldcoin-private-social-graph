@@ -9,9 +9,11 @@ import {ABDKMath64x64} from "../lib/abdk-libraries-solidity/ABDKMath64x64.sol";
 import {BinaryIMT, BinaryIMTData} from "../lib/zk-kit.solidity/packages/imt/contracts/BinaryIMT.sol";
 import {UltraVerifier as ClaimUltraVerifier} from "./claim-plonk-verifier.sol";
 import {UltraVerifier as VoteUltraVerifier} from "./vote-plonk-verifier.sol";
+import {IWorldcoinVerifier} from "./interfaces/IWorldcoinVerifier.sol";
+// import {UltraVerifier as VoteUltraVerifier} from "./plonk_vk.sol";
 
 contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
-    FakeWorldcoinVerifier public immutable worldIDVerificationContract;
+    IWorldcoinVerifier public immutable worldIDVerificationContract;
     ClaimUltraVerifier claimVerifier;
     VoteUltraVerifier voteVerifier;
 
@@ -34,7 +36,11 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
      * @param _voteVerifier - contract address of the vote circuit solidity verifier
      * @param _claimVerifier - contract address of the claim circuit solidity verifier
      */
-    constructor(FakeWorldcoinVerifier _worldcoinVerifier, VoteUltraVerifier _voteVerifier, ClaimUltraVerifier _claimVerifier) {
+    constructor(
+        IWorldcoinVerifier _worldcoinVerifier,
+        VoteUltraVerifier _voteVerifier,
+        ClaimUltraVerifier _claimVerifier
+    ) {
         // setup worldID verification
         worldIDVerificationContract = _worldcoinVerifier;
         // setup tree and initialise with default zeros and push init root to history
@@ -132,16 +138,8 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
      *      finally circuit and zk proof are correct.
      */
     function verifyPour(Pour calldata tx_pour, bool called_by_vote) public view returns (bool) {
-        // if (voteNullifiersExists[tx_pour.sn_old] || !voteMerkleRootExists[tx_pour.rt]) {
-        //     return false;
-        // }
-
-        if(voteNullifiersExists[tx_pour.sn_old]) {
-            revert("Nullifier error");
-        }
-
-        if(!voteMerkleRootExists[tx_pour.rt] && called_by_vote) {
-            revert("rt error");
+        if (voteNullifiersExists[tx_pour.sn_old] || (!voteMerkleRootExists[tx_pour.rt] && called_by_vote)) {
+            return false;
         }
 
         // compute h_sig = poseidon(pk_sig)
@@ -245,9 +243,5 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
         users[msg.sender].numberOfVotes = 0;
 
         emit Penalised(msg.sender);
-    }
-
-    function returnBlockNumber() public view returns (uint256) {
-        return block.number;
     }
 }
