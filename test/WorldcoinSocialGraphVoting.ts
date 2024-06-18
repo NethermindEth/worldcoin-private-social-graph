@@ -1,11 +1,15 @@
 import hre from "hardhat";
+import { ethers } from "ethers";
 import { expect, assert} from 'chai';
+import { IMTMerkleProof } from "@zk-kit/imt"
+import { poseidon1, poseidon2, poseidon3, poseidon4 } from "poseidon-lite";
 
 import { loadFixture } from "@nomicfoundation/hardhat-toolbox-viem/network-helpers";
 
 import { PrivateGraph } from "../src/core/private-graph";
-import { Address, Register, Voting } from "../src/core/structs";
+import { Address, Coin, Pour, Register, Voting } from "../src/core/structs";
 import { mint, verifyMint } from "../src/core/mint";
+import { pour } from "../src/core/pour";
 
 const deployVoting = async () => {
     console.log("Deploy Voting")
@@ -413,5 +417,69 @@ describe("Voting Contract Tests", function () {
 
         expect(await voting.connect(worldID1).claimRewards(candidate.address, claim_tx)).to.emit(voting, "RewardClaimed")
     })
+
+    it.only("Should verify signature created from pour function", async () => {
+        const [deployer, candidate] = await hre.ethers.getSigners();
+        const { voting, worldcoinVerifier, voteVerifier, claimVerifier } = await loadFixture(deployVoting);
+    
+        // Create sample data for the pour function
+        const rt = BigInt(123456);
+        const old_coin: Coin = {
+            public_key: BigInt(987654),
+            value: 100,
+            seed: BigInt(111222),
+            r: BigInt(333444),
+            s: BigInt(555666),
+            cm: BigInt(777888)
+        };
+        const old_sk = BigInt(999000);
+        const path: IMTMerkleProof = {
+            pathIndices: Array(32).fill(0),
+            siblings: Array(32).fill(BigInt(0))
+        };
+        const v_1 = 60;
+        const v_2 = 40;
+        const new_pk_address_1 = BigInt(123456789);
+        const new_pk_address_2 = BigInt(987654321);
+        const v_pub = 0;
+        const info = "Sample info";
+        const is_called_by_vote = false;
+    
+        // Call the pour function
+        const pourResult = await pour(
+            rt,
+            old_coin,
+            old_sk,
+            path,
+            v_1,
+            v_2,
+            new_pk_address_1,
+            new_pk_address_2,
+            v_pub,
+            info,
+            is_called_by_vote
+        );
+        // Perform assertions on the pour result
+        // expect(pourResult.coin_1.value).to.equal(v_1);
+        // expect(pourResult.coin_2.value).to.equal(v_2);
+        // expect(pourResult.coin_1.public_key).to.equal(new_pk_address_1);
+        // expect(pourResult.coin_2.public_key).to.equal(new_pk_address_2);
+        
+        // Extract the necessary fields from the pour result
+        const txPour = {
+            rt: pourResult.tx_pour.rt,
+            sn_old: pourResult.tx_pour.sn_old,
+            cm_1: pourResult.coin_1.cm,
+            cm_2: pourResult.coin_2.cm,
+            v_pub: pourResult.tx_pour.v_pub,
+            info: pourResult.tx_pour.info,
+            pk_sig: pourResult.tx_pour.key.get_pub_key(),
+            pubkey: pourResult.tx_pour.pubkey,
+            h: pourResult.tx_pour.h,
+            proof: pourResult.tx_pour.proof,
+            sig: pourResult.tx_pour.signatureString
+        };
+        const h_sig = poseidon1([pourResult.tx_pour.key.get_pub()]);
+        expect(await voting.connect(candidate).verifySignature(txPour, h_sig)).to.eq(true);
+    });
 });
-  

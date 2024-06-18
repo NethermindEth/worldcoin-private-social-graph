@@ -33,6 +33,10 @@ export class ECDSA_address {
         return "0x" + this.key_pair.getPublic().encode('hex', true).toString()
     }
 
+    public get_pub_key() {
+        return this.key_pair.getPublic()
+    }
+
     // setters
     public set_key_pair(
         new_key_pair: any
@@ -196,10 +200,11 @@ export type Tx_Pour = {
     v_pub: number // public values to verify correct values of coins
     info: string // arbitrary string
     key: ECDSA_address // one time signature public key
-    pubkey: string // public key of the user
+    pubkey?: string // public key of the user
     h: bigint // hash of signature pk
     proof: string // noir proof
     signature: ec.Signature // signature of public instances, proof and info
+    signatureString?: string // signature of public instances, proof and info
 }
 
 // Result of the pour function producing the coins and tx

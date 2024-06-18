@@ -221,7 +221,13 @@ export async function pour(
         if (signature.s.gt(halforder)) {
             signature.s = signature.s.sub(halforder)
         }
-        
+
+        const r = '0x' + signature.r.toString('hex').padStart(64, '0');
+        const s = '0x' + signature.s.toString('hex').padStart(64, '0');
+        const v = signature.recoveryParam ? signature.recoveryParam + 27: signature.recoveryParam;
+        const signatureString = r + s.slice(2) + (v?.toString(16).length === 1 ? '0' + v.toString(16) : v?.toString(16));
+
+
         const tx_pour: Tx_Pour = {
             rt: rt,
             sn_old: sn_old,
@@ -233,7 +239,8 @@ export async function pour(
             pubkey: await getEthereumAddress(sig_key_pair.get_pub()),
             h: h,
             proof: proof,
-            signature: signature
+            signature: signature,
+            signatureString: signatureString
         }
     
         const new_pour : Pour = {

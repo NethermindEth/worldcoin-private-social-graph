@@ -260,6 +260,12 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
         return (block.number / 50_064) + 1;
     }
 
+    /// @notice Function to verify signature
+    function verifySignature(Pour memory txPour, uint256 h_sig) public view returns (bool) {
+        bytes32 _hashedMessage = keccak256(abiEncodeTxPourParams(txPour, h_sig));
+        return SignatureChecker.isValidSignatureNow(txPour.pubkey, _hashedMessage, txPour.sig);
+    }
+
     ///////////////////////
     // Private functions //
     ///////////////////////
@@ -267,10 +273,6 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
     /**
      * @notice verify signature
      */
-    function verifySignature(Pour memory txPour, uint256 h_sig) private view returns (bool) {
-        bytes32 _hashedMessage = keccak256(abiEncodeTxPourParams(txPour, h_sig));
-        return SignatureChecker.isValidSignatureNow(txPour.pubkey, _hashedMessage, txPour.sig);
-    }
 
     function abiEncodeTxPourParams(Pour memory _txPour, uint256 h_sig) private pure returns (bytes memory) {
         return abi.encodePacked(
