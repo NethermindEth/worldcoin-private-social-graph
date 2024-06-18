@@ -42,6 +42,10 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
         claimVerifier = claimCircuit.UltraVerifier(_claimVerifier);
     }
 
+    //////////////////////
+    // Public functions //
+    //////////////////////
+
     /**
      * @notice Function to register an account as a World ID holder
      * @param signal - Signal for the World ID
@@ -84,22 +88,6 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
         // add user to user map
         users[msg.sender] = User(_name, 0, 0, Status.CANDIDATE, 0);
         emit UserRegistered(msg.sender, Status.CANDIDATE);
-    }
-
-    /**
-     * @notice Function to verify a Mint transaction
-     * @param tx_mint - mint tx used to signup a user to the vote tree
-     */
-    function verifyMint(Mint calldata tx_mint) public pure returns (bool) {
-        return tx_mint.commitment == PoseidonT3.hash([tx_mint.value, tx_mint.k]);
-    }
-
-    /**
-     * @notice Function to calculate the current epoch
-     * @return current epoch
-     */
-    function currentEpoch() public view returns (uint256) {
-        return (block.number / 50_064) + 1;
     }
 
     /**
@@ -268,9 +256,29 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
     }
 
     /**
+     * @notice Function to verify a Mint transaction
+     * @param tx_mint - mint tx used to signup a user to the vote tree
+     */
+    function verifyMint(Mint calldata tx_mint) public pure returns (bool) {
+        return tx_mint.commitment == PoseidonT3.hash([tx_mint.value, tx_mint.k]);
+    }
+
+    /**
+     * @notice Function to calculate the current epoch
+     * @return current epoch
+     */
+    function currentEpoch() public view returns (uint256) {
+        return (block.number / 50_064) + 1;
+    }
+
+    ///////////////////////
+    // Private functions //
+    ///////////////////////
+
+    /**
      * @notice verify signature
      */
-    function verifySignature(Pour memory txPour, uint256 h_sig) internal view returns (bool) {
+    function verifySignature(Pour memory txPour, uint256 h_sig) private view returns (bool) {
         bytes32 _hashedMessage = keccak256(abiEncodeTxPourParams(txPour, h_sig));
         bytes32 prefixedHashMessage = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", _hashedMessage));
         return SignatureChecker.isValidSignatureNow(msg.sender, prefixedHashMessage, txPour.sig);
