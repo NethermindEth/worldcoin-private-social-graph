@@ -79,7 +79,6 @@ describe("Voting Contract Tests", function () {
         expect(await voting.verifyMint(mint_tx)).to.be.true
     })
     
-    
     it("Should register a candidate", async () => {
         const [deployer, candidate] = await hre.ethers.getSigners()
         const { voting, worldcoinVerifier, voteVerifier, claimVerifier } = await loadFixture(deployVoting);

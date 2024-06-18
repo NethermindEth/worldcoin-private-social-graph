@@ -160,33 +160,6 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
     }
 
     /**
-     * @notice Computes the inverse of the exponential function for a given input.
-     * @param input - The value for which the inverse exponential is to be calculated, represented as an integer percentage.
-     * @return The result of the inverse exponential calculation, scaled to keep 5 decimal places.
-     * @dev Use the ABDKMath64x64 library to perform fixed-point arithmetic operations. The input is first converted to a
-     *      fixed-point percentage. The exponential of this percentage is calculated and then inverted.
-     */
-    function inversePower(uint256 input) public pure returns (uint256) {
-        // Represent the percentage as a fixed-point number
-        int128 percentage = ABDKMath64x64.divu(input, 100);
-
-        // Calculate e^(percentage)
-        int128 result = ABDKMath64x64.exp(percentage);
-
-        // Multiply by 10^5 to keep 5 decimal places
-        result = ABDKMath64x64.mul(result, ABDKMath64x64.fromUInt(10 ** 5));
-
-        // Invert the exponential as required
-        result = ABDKMath64x64.div(ABDKMath64x64.fromUInt(10 ** 5), result);
-
-        // Multiply by 10^5 to keep 5 decimal places
-        result = ABDKMath64x64.mul(result, ABDKMath64x64.fromUInt(10 ** 5));
-
-        // Convert the fixed-point result to a uint and return it.
-        return ABDKMath64x64.toUInt(result);
-    }
-
-    /**
      * @notice will update the user to verified and allow them to vote on future world ID members
      * @param tx_mint - mint transaction of the candidate in the voting tree
      * @dev will verify the user is eligible for this and if so will insert the tx commitment to the vote tree
