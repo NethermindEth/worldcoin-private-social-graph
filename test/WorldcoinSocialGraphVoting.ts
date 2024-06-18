@@ -89,6 +89,13 @@ describe("Voting Contract Tests", function () {
         assert(can.epochV == 0, "Must have epochV = 0")
     })
 
+    it("Should not register a candidate twice", async () => {
+        const [deployer, candidate] = await hre.ethers.getSigners()
+        const { voting, worldcoinVerifier, voteVerifier, claimVerifier } = await loadFixture(deployVoting);
+        expect(voting.connect(candidate).registerAsCandidate("Bob")).to.emit(voting, "UserRegistered");
+        expect(voting.connect(candidate).registerAsCandidate("Bob")).to.be.reverted;
+    })
+
     it("Should register a worldid user", async () => {
         const social_graph = new PrivateGraph()
         const keys = social_graph.create_address()
