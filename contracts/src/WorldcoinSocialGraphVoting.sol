@@ -140,7 +140,7 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
             revert("Nullifier error");
         }
 
-        if(!voteMerkleRootExists[tx_pour.rt]) {
+        if(!voteMerkleRootExists[tx_pour.rt] && called_by_vote) {
             revert("rt error");
         }
 
@@ -245,5 +245,9 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
         users[msg.sender].numberOfVotes = 0;
 
         emit Penalised(msg.sender);
+    }
+
+    function returnBlockNumber() public view returns (uint256) {
+        return block.number;
     }
 }
