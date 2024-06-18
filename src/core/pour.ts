@@ -5,6 +5,10 @@ import { IMTMerkleProof } from "@zk-kit/imt"
 import { writeFileSync, readFileSync } from "fs"
 import { exec } from "child_process";
 import { ec } from "elliptic"
+import { ethers } from "ethers"
+import 'keccak256';
+import keccak256 from "keccak256";
+
 const EC = new ec('secp256k1')
 
 /**
@@ -78,7 +82,6 @@ export async function pour(
 
     // generate One-time strongly-unforgeable digital signatures (ECDSA) key-pair
     const sig_key_pair : ECDSA_address = new ECDSA_address()
-
     // generate signature hashes
     // hash sig pub key
     const h_sig = poseidon1([sig_key_pair.get_pub()])
@@ -190,9 +193,18 @@ export async function pour(
     }
 
     // Sign message
-    let msg: any = [pour_instance, proof, info]
-    let signature = sig_key_pair.sign(msg)
-    if(!sig_key_pair.verify(msg, signature)) {
+    let msg: any = [...pour_instance, proof, info];
+
+    // Encode the data using ethers.solidityPack
+    const encodedData = ethers.solidityPacked(
+        ["uint256", "uint256", "uint256", "uint256", "uint256", "uint256", "uint256", "string", "string"],
+        msg
+    );
+    
+    const msgHash = ethers.getBytes(ethers.keccak256(encodedData));
+    let signature = sig_key_pair.sign(msgHash);
+    // verify signature
+    if(!sig_key_pair.verify(msgHash, signature)) {
         throw new Error("Signature did not verify")
     }
 
@@ -218,6 +230,7 @@ export async function pour(
             v_pub: v_pub,
             info: info,
             key: sig_key_pair,
+            pubkey: await getEthereumAddress(sig_key_pair.get_pub()),
             h: h,
             proof: proof,
             signature: signature
@@ -309,6 +322,16 @@ const execAsync = (command: string): Promise<{ stdout: string, stderr: string }>
         });
     });
 };
+
+const getEthereumAddress = async (publicKey: string) => {
+    // Remove the '04' prefix if the public key is uncompressed
+    const publicKeyBytes = publicKey.startsWith('04') ? publicKey.slice(2) : publicKey;
+    // Hash the public key bytes
+    const hash = keccak256(Buffer.from(publicKeyBytes, 'hex'));
+    // Take the last 20 bytes of the hash
+    const address = '0x' + hash.slice(-20).toString('hex');
+    return address;
+}
 
 // Example function that uses the execAsync function
 const runCommand = async (command: string): Promise<void> => {

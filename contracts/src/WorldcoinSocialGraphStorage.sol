@@ -52,6 +52,7 @@ contract WorldcoinSocialGraphStorage {
         uint256 v_pub;
         string info;
         bytes32 pk_sig;
+        address pubkey;
         uint256 h;
         bytes proof;
         bytes sig;

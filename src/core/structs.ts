@@ -196,6 +196,7 @@ export type Tx_Pour = {
     v_pub: number // public values to verify correct values of coins
     info: string // arbitrary string
     key: ECDSA_address // one time signature public key
+    pubkey: string // public key of the user
     h: bigint // hash of signature pk
     proof: string // noir proof
     signature: ec.Signature // signature of public instances, proof and info

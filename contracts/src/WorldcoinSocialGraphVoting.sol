@@ -280,8 +280,7 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
      */
     function verifySignature(Pour memory txPour, uint256 h_sig) private view returns (bool) {
         bytes32 _hashedMessage = keccak256(abiEncodeTxPourParams(txPour, h_sig));
-        bytes32 prefixedHashMessage = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", _hashedMessage));
-        return SignatureChecker.isValidSignatureNow(msg.sender, prefixedHashMessage, txPour.sig);
+        return SignatureChecker.isValidSignatureNow(txPour.pubkey, _hashedMessage, txPour.sig);
     }
 
     function abiEncodeTxPourParams(Pour memory _txPour, uint256 h_sig) private pure returns (bytes memory) {
@@ -291,10 +290,8 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
             _txPour.cm_1,
             _txPour.cm_2,
             _txPour.v_pub,
-            _txPour.info,
-            _txPour.pk_sig,
-            _txPour.h,
             h_sig,
+            _txPour.h,
             _txPour.proof,
             _txPour.info
         );
