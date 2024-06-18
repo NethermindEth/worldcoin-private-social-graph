@@ -77,8 +77,8 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
      *      in the user map with status Candidate
      */
     function registerAsCandidate(string calldata _name) public {
-        require(users[msg.sender].status == Status.UNREGISTERED, "msg.sender is already registered");
-        require(!candidateTreeNonEmpty[msg.sender], "msg.sender tree already exists");
+        require(users[msg.sender].status == Status.UNREGISTERED, "WorldcoinSocialGraph: INVALID_USER");
+        require(!candidateTreeNonEmpty[msg.sender], "WorldcoinSocialGraph: CANDIDATE_TREE_ALREADY_EXISTS");
         BinaryIMT.initWithDefaultZeroes(candidateTrees[msg.sender], depth);
         candidateTreeNonEmpty[msg.sender] = true;
         // add user to user map
@@ -95,6 +95,14 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
     }
 
     /**
+     * @notice Function to calculate the current epoch
+     * @return current epoch
+     */
+    function currentEpoch() public view returns (uint256) {
+        return (block.number / 50_064) + 1;
+    }
+
+    /**
      * @notice Function to vote for a candidate
      * @param tx_pour - pour transaction of original coin into 2 new coins in candidate tree and vote tree
      * @param weight - weight to be voted for the candidate
@@ -103,11 +111,11 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
      *      respective trees and add the new roots to the root store
      */
     function recommendCandidate(Pour calldata tx_pour, uint256 weight, address _user) public {
-        require(users[_user].status == Status.CANDIDATE, "User voted for not a candidate");
+        require(users[_user].status == Status.CANDIDATE, "WorldcoinSocialGraph: NOT_A_CANDIDATE");
         // check user has v_in + weight <= 10
-        require(users[_user].v_in + weight <= 1000, "Candidate exceeded maximum voting power, try with a lesser weight");
+        require(users[_user].v_in + weight <= 1000, "WorldcoinSocialGraph: EXCEEDED_VOTING_POWER");
         // verify pour tx
-        require(verifyPour(tx_pour, true), "pour tx failed to verify");
+        require(verifyPour(tx_pour, true), "WorldcoinSocialGraph: POUR_VERIFICATION_FAILED");
         voteNullifiers.push(tx_pour.sn_old);
         voteNullifiersExists[tx_pour.sn_old] = true;
         uint256 new_root = BinaryIMT.insert(VotingTree, tx_pour.cm_1);
@@ -133,10 +141,8 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
         // compute h_sig = poseidon(pk_sig)
         uint256 h_sig = PoseidonT2.hash([uint256(tx_pour.pk_sig)]);
 
-        bytes memory encodeData = abiEncodeTxPourParams(tx_pour, h_sig);
-        isValidSignature(keccak256(encodeData), tx_pour.sig);
         // Verify signature
-        require(verifySignature(msg.sender, keccak256(encodeData), tx_pour.sig));
+        require(verifySignature(tx_pour, h_sig), "WorldcoinSocialGraph: INVALID_SIGNATURE");
 
         // Verify pour circuit proof
         bytes32[] memory publicInputs = new bytes32[](7);
@@ -191,15 +197,14 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
      *      and change the status from Candidate to verified identity
      */
     function updateStatusVerified(Mint calldata tx_mint) public {
-        // msg.sender should be a candidate
-        require(users[msg.sender].status == Status.CANDIDATE, "msg.sender not candidate");
-        require(users[msg.sender].v_in >= x, "v_in lower than threshold to update status");
-        require(verifyMint(tx_mint), "mint tx did not verify");
+        require(users[msg.sender].status == Status.CANDIDATE, "WorldcoinSocialGraph: NOT_A_CANDIDATE");
+        require(users[msg.sender].v_in >= x, "WorldcoinSocialGraph: INSUFFICIENT_VOTING_POWER");
+        require(verifyMint(tx_mint), "WorldCoinSocialGraph: MINT_VERIFICATION_FAILED");
         uint256 new_root = BinaryIMT.insert(VotingTree, tx_mint.commitment);
         voteMerkleRoot.push(new_root);
         voteMerkleRootExists[new_root] = true;
+        uint256 c_epoch = currentEpoch();
         users[msg.sender].status = Status.VERIFIED_IDENTITIY;
-        uint256 c_epoch = (block.number / 50_064) + 1;
         users[msg.sender].epochV = c_epoch;
         rewardsPerEpoch[c_epoch].sum += users[msg.sender].v_in;
         emit CandidateVerified(msg.sender, Status.VERIFIED_IDENTITIY);
@@ -214,15 +219,15 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
      */
     function claimRewards(address _user, Pour calldata tx_pour) public {
         //check user is verified
-        require(users[_user].status == Status.VERIFIED_IDENTITIY, "user claiming rewards for must be verified");
+        require(users[_user].status == Status.VERIFIED_IDENTITIY, "WorldcoinSocialGraph: NOT_VERIFIED_USER");
 
         //compute current epoch
-        uint256 c_epoch = (block.number / 50_064) + 1;
+        uint256 c_epoch = currentEpoch();
         uint256 epoch = users[_user].epochV;
-        require(c_epoch > epoch, "user claiming rewards for verified epoch less than current epoch");
+        require(c_epoch > epoch, "WorldcoinSocialGraph: EPOCH_NOT_ENDED");
         //check if public parameters are valid
         require(tx_pour.v_pub == rewardsPerEpoch[epoch].sum);
-        require(verifyPour(tx_pour, false), "pour tx failed to verify");
+        require(verifyPour(tx_pour, false), "WorldcoinSocialGraph: POUR_VERIFICATION_FAILED");
 
         userIDNullifiers[_user].push(tx_pour.sn_old);
 
@@ -251,7 +256,7 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
      * @notice the penalise function that will delete the candidate tree in order to punish malicious voters
      */
     function penalise() public {
-        require(users[msg.sender].status == Status.CANDIDATE, "msg.sender not candidate");
+        require(users[msg.sender].status == Status.CANDIDATE, "WorldcoinSocialGraph: NOT_A_CANDIDATE");
 
         delete candidateTrees[msg.sender];
         delete userIDMerkleRoot[msg.sender];
@@ -262,14 +267,13 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
         emit Penalised(msg.sender);
     }
 
-    function isValidSignature(bytes32 _hash, bytes memory _sig) internal view { }
-
     /**
      * @notice verify signature
      */
-    function verifySignature(address _signer, bytes32 _hash, bytes memory _sig) internal view returns (bool) {
-        bytes32 prefixedHashMessage = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", _hash));
-        return SignatureChecker.isValidSignatureNow(_signer, prefixedHashMessage, _sig);
+    function verifySignature(Pour memory txPour, uint256 h_sig) internal view returns (bool) {
+        bytes32 _hashedMessage = keccak256(abiEncodeTxPourParams(txPour, h_sig));
+        bytes32 prefixedHashMessage = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", _hashedMessage));
+        return SignatureChecker.isValidSignatureNow(msg.sender, prefixedHashMessage, txPour.sig);
     }
 
     function abiEncodeTxPourParams(Pour memory _txPour, uint256 h_sig) private pure returns (bytes memory) {
