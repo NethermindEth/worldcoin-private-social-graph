@@ -194,12 +194,12 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
         uint256 new_root = BinaryIMT.insert(VotingTree, tx_mint.commitment);
         voteMerkleRoot.push(new_root);
         voteMerkleRootExists[new_root] = true;
-        users[msg.sender].status = Status.VERIFIED_IDENTITIY;
+        users[msg.sender].status = Status.VERIFIED_IDENTITY;
         uint256 c_epoch = (block.number / 50064) + 1;
         users[msg.sender].epochV = c_epoch;
         uint256 rewardsInCurrentEpoch = rewards_per_epoch[c_epoch].sum;
         rewards_per_epoch[c_epoch].sum = rewardsInCurrentEpoch + users[msg.sender].v_in;
-        emit CandidateVerified(msg.sender, Status.VERIFIED_IDENTITIY);
+        emit CandidateVerified(msg.sender, Status.VERIFIED_IDENTITY);
     }
 
     /**
@@ -211,7 +211,7 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
      */
     function claimRewards(address _user, Pour calldata tx_pour) public {
         //check user is verified
-        require(users[_user].status == Status.VERIFIED_IDENTITIY, "user claiming rewards for must be verified");
+        require(users[_user].status == Status.VERIFIED_IDENTITY, "user claiming rewards for must be verified");
 
         //compute current epoch
         uint256 c_epoch = (block.number / 50064) + 1;
