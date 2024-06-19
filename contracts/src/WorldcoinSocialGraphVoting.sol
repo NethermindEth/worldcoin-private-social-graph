@@ -75,9 +75,9 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
     {
         // Perform checks to verify World ID
         worldIDVerificationContract.verifyAndExecute(signal, root, nullifierHash, proof);
-        require(verifyMint(tx_mint), "Mint did not verify");
+        require(verifyMint(tx_mint), "WorldCoinSocialGraph: MINT_VERIFICATION_FAILED");
         // ensure value of mint is equal to 100
-        require(tx_mint.value == 100, "Coin minted with incorrect value != 100");
+        require(tx_mint.value == 100, "WorldCoinSocialGraph: INVALID_MINT_VALUE");
         // will add commitment to the on-chain tree
         uint256 new_root = BinaryIMT.insert(VotingTree, tx_mint.commitment);
         voteMerkleRoot.push(new_root);

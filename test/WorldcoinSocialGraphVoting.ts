@@ -1,13 +1,16 @@
 import hre from "hardhat";
 import { ethers } from "ethers";
 import { expect, assert} from 'chai';
+import { IMTMerkleProof } from "@zk-kit/imt"
 import { Contract } from "ethers";
+import { poseidon1 } from "poseidon-lite";
 import { loadFixture } from "@nomicfoundation/hardhat-toolbox-viem/network-helpers";
 
 import { PrivateGraph } from "../src/core/private-graph";
 import { Address, Coin, Pour, Register, Voting } from "../src/core/structs";
 import { mint, verifyMint } from "../src/core/mint";
 import { deployVoting } from "./Utils";
+import { pour } from "../src/core/pour";
 
 describe("Voting Contract Tests", function () {
     let voting: Contract, worldcoinVerifier: Contract, voteVerifier: Contract, claimVerifier: Contract;
@@ -57,7 +60,7 @@ describe("Voting Contract Tests", function () {
         const [deployer, candidate] = await hre.ethers.getSigners()
         expect(await voting.connect(candidate).registerAsCandidate("Bob")).to.emit(voting, "UserRegistered");
         const can = await voting.users(candidate.address)
-        await expect(voting.connect(candidate).registerAsCandidate("Bob")).to.revertedWith("msg.sender is already registered");
+        await expect(voting.connect(candidate).registerAsCandidate("Bob")).to.revertedWith("WorldcoinSocialGraph: INVALID_USER");
     })
 
     it("Should register a worldid user", async () => {
@@ -96,7 +99,7 @@ describe("Voting Contract Tests", function () {
 
         await expect( voting.connect(worldID).registerAsWorldIDHolder(
             worldID.address, 1234, 1234, [1234,1234,1234,1234,1234,1234,1234,1234], tx_mint
-        )).to.be.revertedWith("Mint did not verify")
+        )).to.be.revertedWith("WorldCoinSocialGraph: MINT_VERIFICATION_FAILED")
     })
 
     it("Should not register a worldID user with coin value not 100", async () => {
@@ -111,7 +114,7 @@ describe("Voting Contract Tests", function () {
         }
         await expect(voting.connect(worldID).registerAsWorldIDHolder(
             worldID.address, 1234, 1234, [1234,1234,1234,1234,1234,1234,1234,1234], mint_tx
-        )).to.be.revertedWith("Coin minted with incorrect value != 100")
+        )).to.be.revertedWith("WorldCoinSocialGraph: INVALID_MINT_VALUE")
     })
 
     it("Should recommend a candidate", async () => {   
@@ -204,7 +207,7 @@ describe("Voting Contract Tests", function () {
 
         await expect(voting.connect(worldID).recommendCandidate (
             tx_pour, weight, candidate.address
-        )).to.be.revertedWith("User voted for not a candidate")
+        )).to.be.revertedWith("WorldcoinSocialGraph: NOT_A_CANDIDATE")
     })
 
     it("Should penalise a malicious voter", async () => {
@@ -377,7 +380,7 @@ describe("Voting Contract Tests", function () {
             s: update_status.tx_mint.s
         }                
         await expect(voting.connect(candidate).updateStatusVerified(mint_tx))
-            .to.revertedWith("v_in lower than threshold to update status");
+            .to.revertedWith("WorldcoinSocialGraph: INSUFFICIENT_VOTING_POWER");
     });
 
     it("Should allow the user to claim back voting power and get rewards", async () => {
@@ -480,7 +483,7 @@ describe("Voting Contract Tests", function () {
         expect(await voting.connect(worldID1).claimRewards(candidate.address, claim_tx)).to.emit(voting, "RewardClaimed")
     })
 
-    it.only("Should verify signature created from pour function", async () => {
+    it("Should verify signature created from pour function", async () => {
         const [deployer, candidate] = await hre.ethers.getSigners();
         const { voting, worldcoinVerifier, voteVerifier, claimVerifier } = await loadFixture(deployVoting);
     

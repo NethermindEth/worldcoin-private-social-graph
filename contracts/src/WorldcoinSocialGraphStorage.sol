@@ -64,7 +64,7 @@ contract WorldcoinSocialGraphStorage {
     mapping(address => uint256[]) userIDNullifiers;
     mapping(address => uint256) sizeOfUserIDNullifiers;
     mapping(uint256 => bool) public voteNullifiersExists;
-    mapping(address => User) internal users;
+    mapping(address => User) public users;
     mapping(address => uint256[]) userIDMerkleRoot;
-    mapping(uint256 => bool) voteMerkleRootExists;
+    mapping(uint256 => bool) public voteMerkleRootExists;
 }
