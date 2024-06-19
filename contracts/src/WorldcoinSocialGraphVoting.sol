@@ -6,8 +6,8 @@ import {PoseidonT4} from "../lib/poseidon-solidity/contracts/PoseidonT4.sol";
 import {PoseidonT2} from "../lib/poseidon-solidity/contracts/PoseidonT2.sol";
 import {ABDKMath64x64} from "../lib/abdk-libraries-solidity/ABDKMath64x64.sol";
 import {BinaryIMT, BinaryIMTData} from "../lib/zk-kit.solidity/packages/imt/contracts/BinaryIMT.sol";
-import {UltraVerifier as ClaimUltraVerifier} from "./claim_plonk_vk.sol";
-import {UltraVerifier as VoteUltraVerifier} from "./vote_plonk_vk.sol";
+import {UltraVerifier as ClaimUltraVerifier} from "../../circuits/claimPour/contract/claimPour/plonk_vk.sol";
+import {UltraVerifier as VoteUltraVerifier} from "../../circuits/votePour/contract/votePour/plonk_vk.sol";
 import {IWorldcoinVerifier} from "./interfaces/IWorldcoinVerifier.sol";
 
 contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
@@ -128,6 +128,16 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
     }
 
     /**
+     * @notice will verify if the given uint lies in the range of a hash function
+     * @param pub - the value which is the hash output
+     * @return bool - boolean as to whether or not the checks pass
+     * @dev will be used to verify if the parameters are correctly passed
+     */
+    function isValidHash(uint256 pub) public view returns (bool) {
+        return pub < 21888242871839275222246405745257275088548364400416034343698204186575808495617;
+    }
+
+    /**
      * @notice will verify the pour transaction provided to either vote/claim
      * @param tx_pour - the pour transaction to be verified
      * @param called_by_vote - boolean to check if the calling function is vote = true OR claim = false
@@ -142,6 +152,13 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
 
         // compute h_sig = poseidon(pk_sig)
         uint256 h_sig = PoseidonT2.hash([uint256(tx_pour.pk_sig)]);
+
+        if (
+            !isValidHash(tx_pour.rt) || !isValidHash(tx_pour.sn_old) || !isValidHash(tx_pour.cm_1)
+                || !isValidHash(tx_pour.cm_2) || !isValidHash(tx_pour.h)
+        ) {
+            return false;
+        }
 
         // Verify pour circuit proof
         bytes32[] memory publicInputs = new bytes32[](7);
