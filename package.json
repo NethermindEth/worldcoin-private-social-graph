@@ -9,8 +9,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "jest",
-    "test-contracts": "npx hardhat test test/WorldcoinSocialGraphVoting.ts"
+    "test-circuits": "jest tests/circuits",
+    "test-contracts": "npx hardhat test tests/contracts/WorldcoinSocialGraphVoting.test.ts"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.28.6",

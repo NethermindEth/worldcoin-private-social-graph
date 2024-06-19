@@ -1,5 +1,5 @@
 import { poseidon2, poseidon4 } from "poseidon-lite";
-import { hash2, hash4 } from "../codegen/index";
+import { hash2, hash4 } from "../../codegen/index";
 
 describe("Poseidon tests", () => {
     it("TS: Should return the correct hash", () => {
