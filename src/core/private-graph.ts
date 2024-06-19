@@ -185,6 +185,9 @@ export class PrivateGraph {
         } else {
             this.rewards[curr_epoch].sum += v_in
         }
+        this.candidates[userID].epochV = curr_epoch
+
+        console.log(this.rewards[curr_epoch])
 
         const reg: Register = {
             tx_mint: m.tx_mint,
@@ -235,6 +238,7 @@ export class PrivateGraph {
         
         const u = old_coin.value // spends a coin from the candidate tree of value u        
         const v_1 = u * this.alpha // creates a new coin of value v_1 in the voting merkle tree - claimed back
+        console.log(this.rewards[verified_epoch])
         const sum = this.rewards[verified_epoch].sum // get total number of rewards are epoch user was verified
         const h = Math.floor(u * this.C / sum) // creates a new coin of value h in the rewards tree
 

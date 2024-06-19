@@ -4,15 +4,14 @@ pragma solidity ^0.8.13;
 import {BinaryIMT, BinaryIMTData} from "../lib/zk-kit.solidity/packages/imt/contracts/BinaryIMT.sol";
 
 contract WorldcoinSocialGraphStorage {
-    uint256 depth = 64;
+    uint256 depth = 32; // MAX DEPTH OF IMT is 32
     uint256 internal x = 600;
 
     enum Status {
         UNREGISTERED,
         WORLD_ID_HOLDER,
         CANDIDATE,
-        VERIFIED_IDENTITIY,
-        REJECTED
+        VERIFIED_IDENTITY
     }
 
     struct User {
@@ -32,7 +31,7 @@ contract WorldcoinSocialGraphStorage {
 
     mapping(uint256 => Rewards) rewards_per_epoch;
 
-    mapping(address => BinaryIMTData) candidateTrees;
+    mapping(address => BinaryIMTData) public candidateTrees;
     mapping(address => bool) candidateTreeNonEmpty;
     BinaryIMTData VotingTree;
     BinaryIMTData RewardsTree;
@@ -43,11 +42,11 @@ contract WorldcoinSocialGraphStorage {
     mapping(uint256 => bool) public voteNullifiersExists;
     uint256[] rewardsNullifiers;
 
-    mapping(address => User) internal users;
+    mapping(address => User) public users;
 
     mapping(address => uint256[]) userIDMerkleRoot;
     uint256[] voteMerkleRoot;
-    mapping(uint256 => bool) voteMerkleRootExists;
+    mapping(uint256 => bool) public voteMerkleRootExists;
     uint256[] rewardsMerkleRoot;
 
     // Mint transaction
@@ -70,5 +69,6 @@ contract WorldcoinSocialGraphStorage {
         uint256 h;
         bytes proof;
         bytes32 sig;
+        bytes32[] publicInputs;
     }
 }

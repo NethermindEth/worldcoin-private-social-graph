@@ -1,44 +1,51 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
-import {WorldcoinVerifier} from "./WorldcoinVerifier.sol";
 import {WorldcoinSocialGraphStorage} from "./WorldcoinSocialGraphStorage.sol";
-import {PoseidonT3} from "../lib/poseidon-solidity/contracts/PoseidonT3.sol";
-import {PoseidonT2} from "../lib/poseidon-solidity/contracts/PoseidonT2.sol";
+import {PoseidonT4} from "../lib/poseidon-solidity/contracts/PoseidonT4.sol";
 import {ABDKMath64x64} from "../lib/abdk-libraries-solidity/ABDKMath64x64.sol";
 import {BinaryIMT, BinaryIMTData} from "../lib/zk-kit.solidity/packages/imt/contracts/BinaryIMT.sol";
-import "../../circuits/votePour/contract/votePour/plonk_vk.sol" as voteCircuit;
-import "../../circuits/claimPour/contract/claimPour/plonk_vk.sol" as claimCircuit;
+import {UltraVerifier as ClaimUltraVerifier} from "../../circuits/claimPour/contract/claimPour/plonk_vk.sol";
+import {UltraVerifier as VoteUltraVerifier} from "../../circuits/votePour/contract/votePour/plonk_vk.sol";
+import {IWorldcoinVerifier} from "./interfaces/IWorldcoinVerifier.sol";
 
 contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
-    WorldcoinVerifier worldIDVerificationContract;
-    claimCircuit.UltraVerifier claimVerifier;
-    voteCircuit.UltraVerifier voteVerifier;
+    IWorldcoinVerifier public immutable worldIDVerificationContract;
+    ClaimUltraVerifier claimVerifier;
+    VoteUltraVerifier voteVerifier;
 
+    /// @notice Event for registering a worldID
+    event WorldIDRegistered();
     /// @notice Event for user registration as World ID holder or Candidate
     event UserRegistered(address indexed user, Status status);
     /// @notice Candidate verified event
     event CandidateVerified(address indexed user, Status status);
     /// @notice Event for reward claims
-    event RewardClaimed(address indexed user, uint256 reward);
+    event RewardClaimed(address indexed user);
     /// @notice Event for penalising a user
     event Penalised(address indexed candidate);
+    /// @notice Event for recommending a candidate
+    event CandidateRecommended(address indexed candidate);
 
     /**
      * @notice sets the state contracts used for verification of world ID and zk circuits
-     * @param _worldIDVerificationContract - contract address of the world ID verification
+     * @param _worldcoinVerifier - contract address of the world ID verification
      * @param _voteVerifier - contract address of the vote circuit solidity verifier
      * @param _claimVerifier - contract address of the claim circuit solidity verifier
      */
-    constructor(WorldcoinVerifier _worldcoinVerifier, address _voteVerifier, address _claimVerifier) {
+    constructor(
+        IWorldcoinVerifier _worldcoinVerifier,
+        VoteUltraVerifier _voteVerifier,
+        ClaimUltraVerifier _claimVerifier
+    ) {
         // setup worldID verification
         worldIDVerificationContract = _worldcoinVerifier;
         // setup tree and initialise with default zeros and push init root to history
         BinaryIMT.initWithDefaultZeroes(VotingTree, depth);
         BinaryIMT.initWithDefaultZeroes(RewardsTree, depth);
         voteMerkleRoot.push(VotingTree.root);
-        voteVerifier = voteCircuit.UltraVerifier(_voteVerifier);
-        claimVerifier = claimCircuit.UltraVerifier(_claimVerifier);
+        voteVerifier = _voteVerifier;
+        claimVerifier = _claimVerifier;
     }
 
     /**
@@ -64,7 +71,10 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
         // ensure value of mint is equal to 100
         require(tx_mint.value == 100, "Coin minted with incorrect value != 100");
         // will add commitment to the on-chain tree
-        voteMerkleRoot.push(BinaryIMT.insert(VotingTree, tx_mint.commitment));
+        uint256 new_root = BinaryIMT.insert(VotingTree, tx_mint.commitment);
+        voteMerkleRoot.push(new_root);
+        voteMerkleRootExists[new_root] = true;
+        emit WorldIDRegistered();
     }
 
     /**
@@ -75,11 +85,10 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
      */
     function registerAsCandidate(string calldata _name) public {
         require(users[msg.sender].status == Status.UNREGISTERED, "msg.sender is already registered");
-        require(!candidateTreeNonEmpty[msg.sender], "msg.sender tree already exists");
         BinaryIMT.initWithDefaultZeroes(candidateTrees[msg.sender], depth);
         candidateTreeNonEmpty[msg.sender] = true;
         // add user to user map
-        users[msg.sender] = User(_name, 0, 0, Status.CANDIDATE, 0, true);
+        users[msg.sender] = User(_name, 0, 0, Status.CANDIDATE, 0);
         emit UserRegistered(msg.sender, Status.CANDIDATE);
     }
 
@@ -88,7 +97,7 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
      * @param tx_mint - mint tx used to signup a user to the vote tree
      */
     function verifyMint(Mint calldata tx_mint) public pure returns (bool) {
-        return tx_mint.commitment == PoseidonT3.hash([tx_mint.value, tx_mint.k]);
+        return tx_mint.commitment == PoseidonT4.hash([tx_mint.k, 0, tx_mint.value]);
     }
 
     /**
@@ -113,6 +122,17 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
         userIDMerkleRoot[_user].push(BinaryIMT.insert(candidateTrees[_user], tx_pour.cm_2));
         users[_user].v_in += weight;
         users[_user].numberOfVotes++;
+        emit CandidateRecommended(_user);
+    }
+
+    /**
+     * @notice will verify if the given uint lies in the range of a hash function
+     * @param pub - the value which is the hash output
+     * @return bool - boolean as to whether or not the checks pass
+     * @dev will be used to verify if the parameters are correctly passed
+     */
+    function isValidHash(uint256 pub) public pure returns (bool) {
+        return pub < 21888242871839275222246405745257275088548364400416034343698204186575808495617;
     }
 
     /**
@@ -124,54 +144,22 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
      *      finally circuit and zk proof are correct.
      */
     function verifyPour(Pour calldata tx_pour, bool called_by_vote) public view returns (bool) {
-        if (voteNullifiersExists[tx_pour.sn_old] || !voteMerkleRootExists[tx_pour.rt]) {
+        if (voteNullifiersExists[tx_pour.sn_old] || (!voteMerkleRootExists[tx_pour.rt] && called_by_vote)) {
             return false;
         }
-        // compute h_sig = poseidon(pk_sig)
-        uint256 h_sig = PoseidonT2.hash([uint256(tx_pour.pk_sig)]);
 
-        // Verify pour circuit proof
-        bytes32[] memory publicInputs = new bytes32[](7);
-        publicInputs[0] = bytes32(tx_pour.rt);
-        publicInputs[1] = bytes32(tx_pour.sn_old);
-        publicInputs[2] = bytes32(tx_pour.cm_1);
-        publicInputs[3] = bytes32(tx_pour.cm_2);
-        publicInputs[4] = bytes32(tx_pour.v_pub);
-        publicInputs[5] = bytes32(h_sig);
-        publicInputs[6] = bytes32(tx_pour.h);
+        if (
+            !isValidHash(tx_pour.rt) || !isValidHash(tx_pour.sn_old) || !isValidHash(tx_pour.cm_1)
+                || !isValidHash(tx_pour.cm_2) || !isValidHash(tx_pour.h)
+        ) {
+            return false;
+        }
 
         if (!called_by_vote) {
-            return (claimVerifier.verify(tx_pour.proof, publicInputs));
+            return (claimVerifier.verify(tx_pour.proof, tx_pour.publicInputs));
         } else {
-            return (voteVerifier.verify(tx_pour.proof, publicInputs));
+            return (voteVerifier.verify(tx_pour.proof, tx_pour.publicInputs));
         }
-    }
-
-    /**
-     * @notice Computes the inverse of the exponential function for a given input.
-     * @param input - The value for which the inverse exponential is to be calculated, represented as an integer percentage.
-     * @return The result of the inverse exponential calculation, scaled to keep 5 decimal places.
-     * @dev Use the ABDKMath64x64 library to perform fixed-point arithmetic operations. The input is first converted to a
-     *      fixed-point percentage. The exponential of this percentage is calculated and then inverted.
-     */
-    function inversePower(uint256 input) public pure returns (uint256) {
-        // Represent the percentage as a fixed-point number
-        int128 percentage = ABDKMath64x64.divu(input, 100);
-
-        // Calculate e^(percentage)
-        int128 result = ABDKMath64x64.exp(percentage);
-
-        // Multiply by 10^5 to keep 5 decimal places
-        result = ABDKMath64x64.mul(result, ABDKMath64x64.fromUInt(10 ** 5));
-
-        // Invert the exponential as required
-        result = ABDKMath64x64.div(ABDKMath64x64.fromUInt(10 ** 5), result);
-
-        // Multiply by 10^5 to keep 5 decimal places
-        result = ABDKMath64x64.mul(result, ABDKMath64x64.fromUInt(10 ** 5));
-
-        // Convert the fixed-point result to a uint and return it.
-        return ABDKMath64x64.toUInt(result);
     }
 
     /**
@@ -188,11 +176,12 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
         uint256 new_root = BinaryIMT.insert(VotingTree, tx_mint.commitment);
         voteMerkleRoot.push(new_root);
         voteMerkleRootExists[new_root] = true;
-        users[msg.sender].status = Status.VERIFIED_IDENTITIY;
+        users[msg.sender].status = Status.VERIFIED_IDENTITY;
         uint256 c_epoch = (block.number / 50064) + 1;
         users[msg.sender].epochV = c_epoch;
-        rewards_per_epoch[c_epoch].sum += users[msg.sender].v_in;
-        emit CandidateVerified(msg.sender, Status.VERIFIED_IDENTITIY);
+        uint256 rewardsInCurrentEpoch = rewards_per_epoch[c_epoch].sum;
+        rewards_per_epoch[c_epoch].sum = rewardsInCurrentEpoch + users[msg.sender].v_in;
+        emit CandidateVerified(msg.sender, Status.VERIFIED_IDENTITY);
     }
 
     /**
@@ -204,7 +193,7 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
      */
     function claimRewards(address _user, Pour calldata tx_pour) public {
         //check user is verified
-        require(users[_user].status == Status.VERIFIED_IDENTITIY, "user claiming rewards for must be verified");
+        require(users[_user].status == Status.VERIFIED_IDENTITY, "user claiming rewards for must be verified");
 
         //compute current epoch
         uint256 c_epoch = (block.number / 50064) + 1;
@@ -235,6 +224,7 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
         if (rewards_per_epoch[i].sum == rewards_per_epoch[i].claimed) {
             delete(rewards_per_epoch[i]);
         }
+        emit RewardClaimed(_user);
     }
 
     /**
