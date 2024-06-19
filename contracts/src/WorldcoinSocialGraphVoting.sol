@@ -160,17 +160,6 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
             return false;
         }
 
-        // Verify pour circuit proof
-        bytes32[] memory publicInputs = new bytes32[](7);
-        publicInputs[0] = bytes32(tx_pour.rt);
-        publicInputs[1] = bytes32(tx_pour.sn_old);
-        publicInputs[2] = bytes32(tx_pour.cm_1);
-        publicInputs[3] = bytes32(tx_pour.cm_2);
-        publicInputs[4] = bytes32(tx_pour.v_pub);
-        publicInputs[5] = bytes32(h_sig);
-        publicInputs[6] = bytes32(tx_pour.h);
-
-        // TODO: FIX VERIFICATION ERROR
         if (!called_by_vote) {
             return (claimVerifier.verify(tx_pour.proof, tx_pour.publicInputs));
         } else {
