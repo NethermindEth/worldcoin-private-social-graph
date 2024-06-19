@@ -26,6 +26,9 @@
     "elliptic": "^6.5.5",
     "eslint": "8.40.0",
     "eslint-config-next": "13.4.1",
+    "ethers": "^6.13.1",
+    "hardhat": "^2.22.5",
+    "keccak256": "^1.0.6",
     "next": "13.4.1",
     "poseidon-lite": "^0.2.0",
     "postcss": "8.4.23",
@@ -49,7 +52,6 @@
     "@types/node": "20.1.2",
     "chai": "4.3.7",
     "ethers": "^6.13.0",
-    "hardhat": "2.22.5",
     "jest": "^29.7.0",
     "poseidon-solidity": "^0.0.5",
     "prettier-plugin-sort-imports-desc": "^1.0.0",
@@ -62,5 +64,6 @@
     "overrides": {
       "@worldcoin/idkit>zustand": "^4.5"
     }
-  }
+  },
+  "packageManager": "pnpm@9.3.0+sha512.ee7b93e0c2bd11409c6424f92b866f31d3ea1bef5fbe47d3c7500cdc3c9668833d2e55681ad66df5b640c61fa9dc25d546efa54d76d7f8bf54b13614ac293631"
 }

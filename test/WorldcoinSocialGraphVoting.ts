@@ -1,12 +1,17 @@
 import hre from "hardhat";
+import { ethers } from "ethers";
 import { expect, assert} from 'chai';
+import { IMTMerkleProof } from "@zk-kit/imt"
 import { Contract } from "ethers";
+import { poseidon1 } from "poseidon-lite";
 import { loadFixture } from "@nomicfoundation/hardhat-toolbox-viem/network-helpers";
+import { ec } from "elliptic"
 
 import { PrivateGraph } from "../src/core/private-graph";
-import { Address, Register, Voting } from "../src/core/structs";
+import { Address, Coin, Pour, Register, Voting } from "../src/core/structs";
 import { mint, verifyMint } from "../src/core/mint";
 import { deployVoting } from "./Utils";
+import { pour } from "../src/core/pour";
 import { poseidon1 } from "poseidon-lite";
 
 describe("Voting Contract Tests", function () {
@@ -57,7 +62,7 @@ describe("Voting Contract Tests", function () {
         const [deployer, candidate] = await hre.ethers.getSigners()
         expect(await voting.connect(candidate).registerAsCandidate("Bob")).to.emit(voting, "UserRegistered");
         const can = await voting.users(candidate.address)
-        await expect(voting.connect(candidate).registerAsCandidate("Bob")).to.revertedWith("msg.sender is already registered");
+        await expect(voting.connect(candidate).registerAsCandidate("Bob")).to.revertedWith("WorldcoinSocialGraph: INVALID_USER");
     })
 
     it("Should register a worldid user", async () => {
@@ -96,7 +101,7 @@ describe("Voting Contract Tests", function () {
 
         await expect( voting.connect(worldID).registerAsWorldIDHolder(
             worldID.address, 1234, 1234, [1234,1234,1234,1234,1234,1234,1234,1234], tx_mint
-        )).to.be.revertedWith("Mint did not verify")
+        )).to.be.revertedWith("WorldCoinSocialGraph: MINT_VERIFICATION_FAILED")
     })
 
     it("Should not register a worldID user with coin value not 100", async () => {
@@ -111,7 +116,7 @@ describe("Voting Contract Tests", function () {
         }
         await expect(voting.connect(worldID).registerAsWorldIDHolder(
             worldID.address, 1234, 1234, [1234,1234,1234,1234,1234,1234,1234,1234], mint_tx
-        )).to.be.revertedWith("Coin minted with incorrect value != 100")
+        )).to.be.revertedWith("WorldCoinSocialGraph: INVALID_MINT_VALUE")
     })
 
     it("Should recommend a candidate", async () => {   
@@ -148,12 +153,10 @@ describe("Voting Contract Tests", function () {
             cm_2: voted.tx_pour.new_cm_2,
             v_pub: voted.tx_pour.v_pub,
             info: voted.tx_pour.info,
-            // pk_sig: voted.tx_pour.key,
-            pk_sig: hre.ethers.encodeBytes32String("A"),
+            pubkey: voted.tx_pour.pubkey,
             h: voted.tx_pour.h,
             proof: hre.ethers.hexlify(voted.tx_pour.proof.proof),
-            // sig: voted.tx_pour.signature,
-            sig: hre.ethers.encodeBytes32String("B"),
+            sig: voted.tx_pour.signatureString,
             publicInputs: voted.tx_pour.proof.publicInputs
         }
 
@@ -247,11 +250,11 @@ describe("Voting Contract Tests", function () {
             v_pub: voted.tx_pour.v_pub,
             info: voted.tx_pour.info,
             // pk_sig: voted.tx_pour.key,
-            pk_sig: hre.ethers.encodeBytes32String("A"),
+            pubkey: voted.tx_pour.pubkey,
             h: voted.tx_pour.h,
             proof: hre.ethers.hexlify(voted.tx_pour.proof.proof),
             // sig: voted.tx_pour.signature,
-            sig: hre.ethers.encodeBytes32String("B"),
+            sig: voted.tx_pour.signatureString,
             publicInputs: voted.tx_pour.proof.publicInputs
         }
 
@@ -292,17 +295,17 @@ describe("Voting Contract Tests", function () {
             v_pub: voted.tx_pour.v_pub,
             info: voted.tx_pour.info,
             // pk_sig: voted.tx_pour.key,
-            pk_sig: hre.ethers.encodeBytes32String("A"),
+            pubkey: voted.tx_pour.pubkey,
             h: voted.tx_pour.h,
             proof: hre.ethers.hexlify(voted.tx_pour.proof.proof),
             // sig: voted.tx_pour.signature,
-            sig: hre.ethers.encodeBytes32String("B"),
+            sig: voted.tx_pour.signatureString,
             publicInputs: voted.tx_pour.proof.publicInputs
         }
 
         await expect(voting.connect(worldID).recommendCandidate (
             tx_pour, weight, candidate.address
-        )).to.be.revertedWith("User voted for not a candidate")
+        )).to.be.revertedWith("WorldcoinSocialGraph: NOT_A_CANDIDATE")
     })
 
     it("Should penalise a malicious voter", async () => {
@@ -348,12 +351,10 @@ describe("Voting Contract Tests", function () {
             cm_2: voted.tx_pour.new_cm_2,
             v_pub: voted.tx_pour.v_pub,
             info: voted.tx_pour.info,
-            // pk_sig: voted.tx_pour.key,
-            pk_sig: hre.ethers.encodeBytes32String("A"),
+            pubkey: voted.tx_pour.pubkey,
             h: voted.tx_pour.h,
             proof: hre.ethers.hexlify(voted.tx_pour.proof.proof),
-            // sig: voted.tx_pour.signature,
-            sig: hre.ethers.encodeBytes32String("B"),
+            sig: voted.tx_pour.signatureString,
             publicInputs: voted.tx_pour.proof.publicInputs
         }
 
@@ -418,12 +419,10 @@ describe("Voting Contract Tests", function () {
                 cm_2: voted.tx_pour.new_cm_2,
                 v_pub: voted.tx_pour.v_pub,
                 info: voted.tx_pour.info,
-                // pk_sig: voted.tx_pour.key,
-                pk_sig: hre.ethers.encodeBytes32String("A"),
+                pubkey: voted.tx_pour.pubkey,
                 h: voted.tx_pour.h,
                 proof: hre.ethers.hexlify(voted.tx_pour.proof.proof),
-                // sig: voted.tx_pour.signature,
-                sig: hre.ethers.encodeBytes32String("B"),
+                sig: voted.tx_pour.signatureString,
                 publicInputs: voted.tx_pour.proof.publicInputs
             }
             
@@ -477,7 +476,7 @@ describe("Voting Contract Tests", function () {
             s: update_status.tx_mint.s
         }                
         await expect(voting.connect(candidate).updateStatusVerified(mint_tx))
-            .to.revertedWith("v_in lower than threshold to update status");
+            .to.revertedWith("WorldcoinSocialGraph: INSUFFICIENT_VOTING_POWER");
     });
 
 
@@ -525,12 +524,10 @@ describe("Voting Contract Tests", function () {
                 cm_2: voted.tx_pour.new_cm_2,
                 v_pub: voted.tx_pour.v_pub,
                 info: voted.tx_pour.info,
-                // pk_sig: voted.tx_pour.key,
-                pk_sig: hre.ethers.encodeBytes32String("A"),
+                pubkey: voted.tx_pour.pubkey,
                 h: voted.tx_pour.h,
                 proof: hre.ethers.hexlify(voted.tx_pour.proof.proof),
-                // sig: voted.tx_pour.signature,
-                sig: hre.ethers.encodeBytes32String("B"),
+                sig: voted.tx_pour.signatureString,
                 publicInputs: voted.tx_pour.proof.publicInputs
             }
     
@@ -634,4 +631,3 @@ describe("Voting Contract Tests", function () {
 
 
 });
-  

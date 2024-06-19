@@ -1,11 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
-import {BinaryIMT, BinaryIMTData} from "../lib/zk-kit.solidity/packages/imt/contracts/BinaryIMT.sol";
+import { BinaryIMT, BinaryIMTData } from "../lib/zk-kit.solidity/packages/imt/contracts/BinaryIMT.sol";
 
 contract WorldcoinSocialGraphStorage {
-    uint256 depth = 32; // MAX DEPTH OF IMT is 32
-    uint256 internal x = 600;
+    uint256 internal constant depth = 32; // MAX DEPTH OF IMT is 32
+    uint256 internal constant x = 600;
+    BinaryIMTData VotingTree;
+    BinaryIMTData RewardsTree;
+    uint256[] voteNullifiers;
+    uint256[] rewardsNullifiers;
+    uint256[] voteMerkleRoot;
+    uint256[] rewardsMerkleRoot;
 
     enum Status {
         UNREGISTERED,
@@ -29,26 +35,6 @@ contract WorldcoinSocialGraphStorage {
         uint256 claimed;
     }
 
-    mapping(uint256 => Rewards) rewards_per_epoch;
-
-    mapping(address => BinaryIMTData) public candidateTrees;
-    mapping(address => bool) candidateTreeNonEmpty;
-    BinaryIMTData VotingTree;
-    BinaryIMTData RewardsTree;
-
-    mapping(address => uint256[]) userIDNullifiers;
-    mapping(address => uint256) sizeOfUserIDNullifiers;
-    uint256[] voteNullifiers;
-    mapping(uint256 => bool) public voteNullifiersExists;
-    uint256[] rewardsNullifiers;
-
-    mapping(address => User) public users;
-
-    mapping(address => uint256[]) userIDMerkleRoot;
-    uint256[] voteMerkleRoot;
-    mapping(uint256 => bool) public voteMerkleRootExists;
-    uint256[] rewardsMerkleRoot;
-
     // Mint transaction
     struct Mint {
         uint256 commitment;
@@ -65,10 +51,20 @@ contract WorldcoinSocialGraphStorage {
         uint256 cm_2;
         uint256 v_pub;
         string info;
-        bytes32 pk_sig;
+        address pubkey;
         uint256 h;
         bytes proof;
-        bytes32 sig;
+        bytes sig;
         bytes32[] publicInputs;
     }
+
+    mapping(uint256 => Rewards) rewardsPerEpoch;
+    mapping(address => BinaryIMTData) public candidateTrees;
+    mapping(address => bool) candidateTreeNonEmpty;
+    mapping(address => uint256[]) userIDNullifiers;
+    mapping(address => uint256) sizeOfUserIDNullifiers;
+    mapping(uint256 => bool) public voteNullifiersExists;
+    mapping(address => User) public users;
+    mapping(address => uint256[]) userIDMerkleRoot;
+    mapping(uint256 => bool) public voteMerkleRootExists;
 }

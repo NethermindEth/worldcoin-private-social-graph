@@ -1,0 +1,3 @@
+@abdk-library/=lib/abdk-libraries-solidity/
+@openzeppelin/=lib/openzeppelin-contracts/
+@poseidon/=lib/poseidon-solidity/

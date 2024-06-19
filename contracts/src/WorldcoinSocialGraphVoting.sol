@@ -1,18 +1,20 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
-import {WorldcoinSocialGraphStorage} from "./WorldcoinSocialGraphStorage.sol";
-import {PoseidonT4} from "../lib/poseidon-solidity/contracts/PoseidonT4.sol";
-import {ABDKMath64x64} from "../lib/abdk-libraries-solidity/ABDKMath64x64.sol";
-import {BinaryIMT, BinaryIMTData} from "../lib/zk-kit.solidity/packages/imt/contracts/BinaryIMT.sol";
-import {UltraVerifier as ClaimUltraVerifier} from "../../circuits/claimPour/contract/claimPour/plonk_vk.sol";
-import {UltraVerifier as VoteUltraVerifier} from "../../circuits/votePour/contract/votePour/plonk_vk.sol";
-import {IWorldcoinVerifier} from "./interfaces/IWorldcoinVerifier.sol";
+import { WorldcoinSocialGraphStorage } from "./WorldcoinSocialGraphStorage.sol";
+import { PoseidonT4 } from "../lib/poseidon-solidity/contracts/PoseidonT4.sol";
+import { PoseidonT2 } from "../lib/poseidon-solidity/contracts/PoseidonT2.sol";
+import { ABDKMath64x64 } from "../lib/abdk-libraries-solidity/ABDKMath64x64.sol";
+import { BinaryIMT, BinaryIMTData } from "../lib/zk-kit.solidity/packages/imt/contracts/BinaryIMT.sol";
+import { UltraVerifier as ClaimUltraVerifier } from "./claim_plonk_vk.sol";
+import { UltraVerifier as VoteUltraVerifier } from "./vote_plonk_vk.sol";
+import { IWorldcoinVerifier } from "./interfaces/IWorldcoinVerifier.sol";
+import { SignatureChecker } from "../lib/openzeppelin-contracts/contracts/utils/cryptography/SignatureChecker.sol";
 
 contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
     IWorldcoinVerifier public immutable worldIDVerificationContract;
-    ClaimUltraVerifier claimVerifier;
-    VoteUltraVerifier voteVerifier;
+    ClaimUltraVerifier immutable claimVerifier;
+    VoteUltraVerifier immutable voteVerifier;
 
     /// @notice Event for registering a worldID
     event WorldIDRegistered();
@@ -29,17 +31,17 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
 
     /**
      * @notice sets the state contracts used for verification of world ID and zk circuits
-     * @param _worldcoinVerifier - contract address of the world ID verification
+     * @param _worldIDVerificationContract - contract address of the world ID verification
      * @param _voteVerifier - contract address of the vote circuit solidity verifier
      * @param _claimVerifier - contract address of the claim circuit solidity verifier
      */
     constructor(
-        IWorldcoinVerifier _worldcoinVerifier,
+        IWorldcoinVerifier _worldIDVerificationContract,
         VoteUltraVerifier _voteVerifier,
         ClaimUltraVerifier _claimVerifier
     ) {
         // setup worldID verification
-        worldIDVerificationContract = _worldcoinVerifier;
+        worldIDVerificationContract = _worldIDVerificationContract;
         // setup tree and initialise with default zeros and push init root to history
         BinaryIMT.initWithDefaultZeroes(VotingTree, depth);
         BinaryIMT.initWithDefaultZeroes(RewardsTree, depth);
@@ -47,6 +49,10 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
         voteVerifier = _voteVerifier;
         claimVerifier = _claimVerifier;
     }
+
+    //////////////////////
+    // Public functions //
+    //////////////////////
 
     /**
      * @notice Function to register an account as a World ID holder
@@ -64,12 +70,14 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
         uint256 nullifierHash,
         uint256[8] calldata proof,
         Mint calldata tx_mint
-    ) public {
+    )
+        public
+    {
         // Perform checks to verify World ID
         worldIDVerificationContract.verifyAndExecute(signal, root, nullifierHash, proof);
-        require(verifyMint(tx_mint), "Mint did not verify");
+        require(verifyMint(tx_mint), "WorldCoinSocialGraph: MINT_VERIFICATION_FAILED");
         // ensure value of mint is equal to 100
-        require(tx_mint.value == 100, "Coin minted with incorrect value != 100");
+        require(tx_mint.value == 100, "WorldCoinSocialGraph: INVALID_MINT_VALUE");
         // will add commitment to the on-chain tree
         uint256 new_root = BinaryIMT.insert(VotingTree, tx_mint.commitment);
         voteMerkleRoot.push(new_root);
@@ -84,10 +92,11 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
      *      in the user map with status Candidate
      */
     function registerAsCandidate(string calldata _name) public {
-        require(users[msg.sender].status == Status.UNREGISTERED, "msg.sender is already registered");
+        require(users[msg.sender].status == Status.UNREGISTERED, "WorldcoinSocialGraph: INVALID_USER");
         BinaryIMT.initWithDefaultZeroes(candidateTrees[msg.sender], depth);
         candidateTreeNonEmpty[msg.sender] = true;
         // add user to user map
+        users[msg.sender] = User(_name, 0, 0, Status.CANDIDATE, 0);
         users[msg.sender] = User(_name, 0, 0, Status.CANDIDATE, 0);
         emit UserRegistered(msg.sender, Status.CANDIDATE);
     }
@@ -109,11 +118,11 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
      *      respective trees and add the new roots to the root store
      */
     function recommendCandidate(Pour calldata tx_pour, uint256 weight, address _user) public {
-        require(users[_user].status == Status.CANDIDATE, "User voted for not a candidate");
+        require(users[_user].status == Status.CANDIDATE, "WorldcoinSocialGraph: NOT_A_CANDIDATE");
         // check user has v_in + weight <= 10
-        require(users[_user].v_in + weight <= 1000, "Candidate exceeded maximum voting power, try with a lesser weight");
+        require(users[_user].v_in + weight <= 1000, "WorldcoinSocialGraph: EXCEEDED_VOTING_POWER");
         // verify pour tx
-        require(verifyPour(tx_pour, true), "pour tx failed to verify");
+        require(verifyPour(tx_pour, true), "WorldcoinSocialGraph: POUR_VERIFICATION_FAILED");
         voteNullifiers.push(tx_pour.sn_old);
         voteNullifiersExists[tx_pour.sn_old] = true;
         uint256 new_root = BinaryIMT.insert(VotingTree, tx_pour.cm_1);
@@ -132,7 +141,8 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
      * @dev will be used to verify if the parameters are correctly passed
      */
     function isValidHash(uint256 pub) public pure returns (bool) {
-        return pub < 21888242871839275222246405745257275088548364400416034343698204186575808495617;
+        return
+            pub < 21_888_242_871_839_275_222_246_405_745_257_275_088_548_364_400_416_034_343_698_204_186_575_808_495_617;
     }
 
     /**
@@ -147,6 +157,12 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
         if (voteNullifiersExists[tx_pour.sn_old] || (!voteMerkleRootExists[tx_pour.rt] && called_by_vote)) {
             return false;
         }
+
+        // compute h_sig = poseidon(pubkey)
+        uint256 h_sig = PoseidonT2.hash([uint256(uint160(tx_pour.pubkey))]);
+
+        // Verify signature
+        require(verifySignature(tx_pour, h_sig), "WorldcoinSocialGraph: INVALID_POUR_SIGNATURE");
 
         if (
             !isValidHash(tx_pour.rt) || !isValidHash(tx_pour.sn_old) || !isValidHash(tx_pour.cm_1)
@@ -169,18 +185,16 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
      *      and change the status from Candidate to verified identity
      */
     function updateStatusVerified(Mint calldata tx_mint) public {
-        // msg.sender should be a candidate
-        require(users[msg.sender].status == Status.CANDIDATE, "msg.sender not candidate");
-        require(users[msg.sender].v_in >= x, "v_in lower than threshold to update status");
-        require(verifyMint(tx_mint), "mint tx did not verify");
+        require(users[msg.sender].status == Status.CANDIDATE, "WorldcoinSocialGraph: NOT_A_CANDIDATE");
+        require(users[msg.sender].v_in >= x, "WorldcoinSocialGraph: INSUFFICIENT_VOTING_POWER");
+        require(verifyMint(tx_mint), "WorldCoinSocialGraph: MINT_VERIFICATION_FAILED");
         uint256 new_root = BinaryIMT.insert(VotingTree, tx_mint.commitment);
         voteMerkleRoot.push(new_root);
         voteMerkleRootExists[new_root] = true;
+        uint256 c_epoch = currentEpoch();
         users[msg.sender].status = Status.VERIFIED_IDENTITY;
-        uint256 c_epoch = (block.number / 50064) + 1;
         users[msg.sender].epochV = c_epoch;
-        uint256 rewardsInCurrentEpoch = rewards_per_epoch[c_epoch].sum;
-        rewards_per_epoch[c_epoch].sum = rewardsInCurrentEpoch + users[msg.sender].v_in;
+        rewardsPerEpoch[c_epoch].sum += users[msg.sender].v_in;
         emit CandidateVerified(msg.sender, Status.VERIFIED_IDENTITY);
     }
 
@@ -193,15 +207,15 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
      */
     function claimRewards(address _user, Pour calldata tx_pour) public {
         //check user is verified
-        require(users[_user].status == Status.VERIFIED_IDENTITY, "user claiming rewards for must be verified");
+        require(users[_user].status == Status.VERIFIED_IDENTITY, "WorldcoinSocialGraph: NOT_VERIFIED_USER");
 
         //compute current epoch
-        uint256 c_epoch = (block.number / 50064) + 1;
+        uint256 c_epoch = currentEpoch();
         uint256 epoch = users[_user].epochV;
-        require(c_epoch > epoch, "user claiming rewards for verified epoch less than current epoch");
+        require(c_epoch > epoch, "WorldcoinSocialGraph: EPOCH_NOT_ENDED");
         //check if public parameters are valid
-        require(tx_pour.v_pub == rewards_per_epoch[epoch].sum);
-        require(verifyPour(tx_pour, false), "pour tx failed to verify");
+        require(tx_pour.v_pub == rewardsPerEpoch[epoch].sum);
+        require(verifyPour(tx_pour, false), "WorldcoinSocialGraph: POUR_VERIFICATION_FAILED");
 
         userIDNullifiers[_user].push(tx_pour.sn_old);
 
@@ -220,9 +234,9 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
         }
 
         uint256 i = users[_user].epochV;
-        rewards_per_epoch[i].claimed += users[_user].v_in;
-        if (rewards_per_epoch[i].sum == rewards_per_epoch[i].claimed) {
-            delete(rewards_per_epoch[i]);
+        rewardsPerEpoch[i].claimed += users[_user].v_in;
+        if (rewardsPerEpoch[i].sum == rewardsPerEpoch[i].claimed) {
+            delete(rewardsPerEpoch[i]);
         }
         emit RewardClaimed(_user);
     }
@@ -231,7 +245,7 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
      * @notice the penalise function that will delete the candidate tree in order to punish malicious voters
      */
     function penalise() public {
-        require(users[msg.sender].status == Status.CANDIDATE, "msg.sender not candidate");
+        require(users[msg.sender].status == Status.CANDIDATE, "WorldcoinSocialGraph: NOT_A_CANDIDATE");
 
         delete candidateTrees[msg.sender];
         delete userIDMerkleRoot[msg.sender];
@@ -240,5 +254,42 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
         users[msg.sender].numberOfVotes = 0;
 
         emit Penalised(msg.sender);
+    }
+
+    /**
+     * @notice Function to calculate the current epoch
+     * @return current epoch
+     */
+    function currentEpoch() public view returns (uint256) {
+        return (block.number / 50_064) + 1;
+    }
+
+    /// @notice Function to verify signature
+    function verifySignature(Pour memory txPour, uint256 h_sig) public view returns (bool) {
+        bytes32 _hashedMessage = keccak256(abiEncodeTxPourParams(txPour, h_sig));
+        // Prefix hash
+        bytes32 prefixedHash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", _hashedMessage));
+        return SignatureChecker.isValidSignatureNow(txPour.pubkey, prefixedHash, txPour.sig);
+    }
+
+    ///////////////////////
+    // Private functions //
+    ///////////////////////
+
+    /**
+     * @notice verify signature
+     */
+    function abiEncodeTxPourParams(Pour memory _txPour, uint256 h_sig) private pure returns (bytes memory) {
+        return abi.encodePacked(
+            _txPour.rt,
+            _txPour.sn_old,
+            _txPour.cm_1,
+            _txPour.cm_2,
+            _txPour.v_pub,
+            h_sig,
+            _txPour.h,
+            _txPour.proof,
+            _txPour.info
+        );
     }
 }
