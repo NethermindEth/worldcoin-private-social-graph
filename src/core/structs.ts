@@ -34,7 +34,7 @@ export class ECDSA_address {
     }
 
     public get_pub_key() {
-        return this.key_pair.getPublic()
+        return this.key_pair.getPublic('hex')
     }
 
     // setters

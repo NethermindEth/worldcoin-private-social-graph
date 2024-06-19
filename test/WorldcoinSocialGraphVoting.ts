@@ -525,10 +525,10 @@ describe("Voting Contract Tests", function () {
             is_called_by_vote
         );
         // Perform assertions on the pour result
-        // expect(pourResult.coin_1.value).to.equal(v_1);
-        // expect(pourResult.coin_2.value).to.equal(v_2);
-        // expect(pourResult.coin_1.public_key).to.equal(new_pk_address_1);
-        // expect(pourResult.coin_2.public_key).to.equal(new_pk_address_2);
+        expect(pourResult.coin_1.value).to.equal(v_1);
+        expect(pourResult.coin_2.value).to.equal(v_2);
+        expect(pourResult.coin_1.public_key).to.equal(new_pk_address_1);
+        expect(pourResult.coin_2.public_key).to.equal(new_pk_address_2);
         
         // Extract the necessary fields from the pour result
         const txPour = {
@@ -538,13 +538,12 @@ describe("Voting Contract Tests", function () {
             cm_2: pourResult.coin_2.cm,
             v_pub: pourResult.tx_pour.v_pub,
             info: pourResult.tx_pour.info,
-            pk_sig: pourResult.tx_pour.key.get_pub_key(),
             pubkey: pourResult.tx_pour.pubkey,
             h: pourResult.tx_pour.h,
             proof: pourResult.tx_pour.proof,
             sig: pourResult.tx_pour.signatureString
         };
-        const h_sig = poseidon1([pourResult.tx_pour.key.get_pub()]);
+        let h_sig = poseidon1([ethers.getUint(txPour.pubkey as string)])
         expect(await voting.connect(candidate).verifySignature(txPour, h_sig)).to.eq(true);
     });
 });

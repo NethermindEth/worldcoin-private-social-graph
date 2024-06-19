@@ -84,7 +84,10 @@ export async function pour(
     const sig_key_pair : ECDSA_address = new ECDSA_address()
     // generate signature hashes
     // hash sig pub key
-    const h_sig = poseidon1([sig_key_pair.get_pub()])
+    const ethereumAddress = await getEthereumAddress(sig_key_pair.get_pub_key());
+    const pubke = ethers.getUint(ethereumAddress);
+    const h_sig = poseidon1([pubke]);
+
     // hash of signature with old address secret key
     const h = poseidon4([old_sk, 2, 0, h_sig]) // padding taken from zcash doc
 
@@ -201,10 +204,11 @@ export async function pour(
         msg
     );
     
-    const msgHash = ethers.getBytes(ethers.keccak256(encodedData));
-    let signature = sig_key_pair.sign(msgHash);
+    const msgHash = ethers.keccak256(encodedData);
+    const hashBytes = ethers.getBytes(msgHash);
+    let signature = sig_key_pair.sign(hashBytes);
     // verify signature
-    if(!sig_key_pair.verify(msgHash, signature)) {
+    if(!sig_key_pair.verify(hashBytes, signature)) {
         throw new Error("Signature did not verify")
     }
 
@@ -224,9 +228,8 @@ export async function pour(
 
         const r = '0x' + signature.r.toString('hex').padStart(64, '0');
         const s = '0x' + signature.s.toString('hex').padStart(64, '0');
-        const v = signature.recoveryParam ? signature.recoveryParam + 27: signature.recoveryParam;
-        const signatureString = r + s.slice(2) + (v?.toString(16).length === 1 ? '0' + v.toString(16) : v?.toString(16));
-
+        const v = signature.recoveryParam as number + 27;
+        const signatureString = r + s.slice(2) + (v.toString(16).length === 1 ? '0' + v.toString(16) : v?.toString(16));
 
         const tx_pour: Tx_Pour = {
             rt: rt,
@@ -236,7 +239,7 @@ export async function pour(
             v_pub: v_pub,
             info: info,
             key: sig_key_pair,
-            pubkey: await getEthereumAddress(sig_key_pair.get_pub()),
+            pubkey: ethereumAddress,
             h: h,
             proof: proof,
             signature: signature,
@@ -281,7 +284,7 @@ export async function verifyPour(
     }
 
     // check h corresponds h_sig
-    const h_sig = poseidon1([pour.tx_pour.key.get_pub()])
+    const h_sig = poseidon1([ethers.getUint(pour.tx_pour.pubkey as string)])
     if (pour.tx_pour.h != poseidon4([old_sk, 2, 0, h_sig])) {
         return false
     }
