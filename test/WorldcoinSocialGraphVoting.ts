@@ -12,6 +12,7 @@ import { Address, Coin, Pour, Register, Voting } from "../src/core/structs";
 import { mint, verifyMint } from "../src/core/mint";
 import { deployVoting } from "./Utils";
 import { pour } from "../src/core/pour";
+import { poseidon1 } from "poseidon-lite";
 
 describe("Voting Contract Tests", function () {
     let voting: Contract, worldcoinVerifier: Contract, voteVerifier: Contract, claimVerifier: Contract;
@@ -162,6 +163,196 @@ describe("Voting Contract Tests", function () {
         expect(await voting.connect(worldID).recommendCandidate (
             tx_pour, weight, candidate.address
         )).to.emit(voting, "CandidateRecommended")
+    })
+
+    it("Should not verify a double pour", async function () {
+        const social_graph = new PrivateGraph()
+        const [candidate, worldID] = await hre.ethers.getSigners();
+        const userID = social_graph.registerCandidate("Jim", 1)
+        expect(await voting.connect(candidate).registerAsCandidate("Jim")).to.emit(voting, "UserRegistered")
+
+        const old_zcash_address = social_graph.create_address()
+
+        const worldIDRegister = social_graph.registerWorldID(old_zcash_address.pk)
+
+        const tx_mint = {
+            commitment: worldIDRegister.tx_mint.cm,
+            value: worldIDRegister.tx_mint.value,
+            k: worldIDRegister.tx_mint.k,
+            s: worldIDRegister.tx_mint.s
+        }
+
+        expect(await voting.connect(worldID).registerAsWorldIDHolder(
+            worldID.address, 1234, 1234, [1234,1234,1234,1234,1234,1234,1234,1234], tx_mint
+        )).to.emit(voting, "WorldIDRegistered")
+
+        const new_zcash_key_pair_1 = social_graph.create_address()
+        const new_zcash_key_pair_2 = social_graph.create_address()
+
+        const weight = 50
+
+        const voted = await social_graph.vote(worldIDRegister.coin, old_zcash_address, new_zcash_key_pair_1.pk, new_zcash_key_pair_2.pk, userID, weight)
+        const tx_pour = {
+            rt: voted.tx_pour.rt,
+            sn_old: voted.tx_pour.sn_old,
+            cm_1: voted.tx_pour.new_cm_1,
+            cm_2: voted.tx_pour.new_cm_2,
+            v_pub: voted.tx_pour.v_pub,
+            info: voted.tx_pour.info,
+            pubkey: voted.tx_pour.pubkey,
+            h: voted.tx_pour.h,
+            proof: hre.ethers.hexlify(voted.tx_pour.proof.proof),
+            sig: voted.tx_pour.signatureString,
+            publicInputs: voted.tx_pour.proof.publicInputs
+        }
+
+        expect(await voting.connect(worldID).recommendCandidate (
+            tx_pour, weight, candidate.address
+        )).to.emit(voting, "CandidateRecommended")
+
+        expect(await voting.verifyPour(tx_pour, true)).to.be.false
+    })
+
+    it("Should not verify a double pour", async function () {
+        const social_graph = new PrivateGraph()
+        const [candidate, worldID] = await hre.ethers.getSigners();
+        const userID = social_graph.registerCandidate("Jim", 1)
+        expect(await voting.connect(candidate).registerAsCandidate("Jim")).to.emit(voting, "UserRegistered")
+
+        const old_zcash_address = social_graph.create_address()
+
+        const worldIDRegister = social_graph.registerWorldID(old_zcash_address.pk)
+
+        const tx_mint = {
+            commitment: worldIDRegister.tx_mint.cm,
+            value: worldIDRegister.tx_mint.value,
+            k: worldIDRegister.tx_mint.k,
+            s: worldIDRegister.tx_mint.s
+        }
+
+        expect(await voting.connect(worldID).registerAsWorldIDHolder(
+            worldID.address, 1234, 1234, [1234,1234,1234,1234,1234,1234,1234,1234], tx_mint
+        )).to.emit(voting, "WorldIDRegistered")
+
+        const new_zcash_key_pair_1 = social_graph.create_address()
+        const new_zcash_key_pair_2 = social_graph.create_address()
+
+        const weight = 50
+
+        const voted = await social_graph.vote(worldIDRegister.coin, old_zcash_address, new_zcash_key_pair_1.pk, new_zcash_key_pair_2.pk, userID, weight)
+        const tx_pour = {
+            rt: voted.tx_pour.rt,
+            sn_old: voted.tx_pour.sn_old,
+            cm_1: voted.tx_pour.new_cm_1,
+            cm_2: voted.tx_pour.new_cm_2,
+            v_pub: voted.tx_pour.v_pub,
+            info: voted.tx_pour.info,
+            // pk_sig: voted.tx_pour.key,
+            pk_sig: hre.ethers.encodeBytes32String("A"),
+            h: voted.tx_pour.h,
+            proof: hre.ethers.hexlify(voted.tx_pour.proof.proof),
+            // sig: voted.tx_pour.signature,
+            sig: hre.ethers.encodeBytes32String("B"),
+            publicInputs: voted.tx_pour.proof.publicInputs
+        }
+
+        expect(await voting.connect(worldID).recommendCandidate (
+            tx_pour, weight, candidate.address
+        )).to.emit(voting, "CandidateRecommended")
+
+        expect(await voting.verifyPour(tx_pour, true)).to.be.false
+    })
+
+    it("Should not verify a vote pour when its a claim", async function () {
+        const social_graph = new PrivateGraph()
+        const [candidate, worldID] = await hre.ethers.getSigners();
+        const userID = social_graph.registerCandidate("Jim", 1)
+        expect(await voting.connect(candidate).registerAsCandidate("Jim")).to.emit(voting, "UserRegistered")
+
+        const old_zcash_address = social_graph.create_address()
+
+        const worldIDRegister = social_graph.registerWorldID(old_zcash_address.pk)
+
+        const tx_mint = {
+            commitment: worldIDRegister.tx_mint.cm,
+            value: worldIDRegister.tx_mint.value,
+            k: worldIDRegister.tx_mint.k,
+            s: worldIDRegister.tx_mint.s
+        }
+
+        expect(await voting.connect(worldID).registerAsWorldIDHolder(
+            worldID.address, 1234, 1234, [1234,1234,1234,1234,1234,1234,1234,1234], tx_mint
+        )).to.emit(voting, "WorldIDRegistered")
+
+        const new_zcash_key_pair_1 = social_graph.create_address()
+        const new_zcash_key_pair_2 = social_graph.create_address()
+
+        const weight = 50
+
+        const voted = await social_graph.vote(worldIDRegister.coin, old_zcash_address, new_zcash_key_pair_1.pk, new_zcash_key_pair_2.pk, userID, weight)
+        const tx_pour = {
+            rt: voted.tx_pour.rt,
+            sn_old: voted.tx_pour.sn_old,
+            cm_1: voted.tx_pour.new_cm_1,
+            cm_2: voted.tx_pour.new_cm_2,
+            v_pub: voted.tx_pour.v_pub,
+            info: voted.tx_pour.info,
+            // pk_sig: voted.tx_pour.key,
+            pk_sig: hre.ethers.encodeBytes32String("A"),
+            h: voted.tx_pour.h,
+            proof: hre.ethers.hexlify(voted.tx_pour.proof.proof),
+            // sig: voted.tx_pour.signature,
+            sig: hre.ethers.encodeBytes32String("B"),
+            publicInputs: voted.tx_pour.proof.publicInputs
+        }
+
+        await expect(voting.verifyPour(tx_pour, false)).to.be.reverted
+    })
+
+    it("Should not verify a vote pour when its a claim", async function () {
+        const social_graph = new PrivateGraph()
+        const [candidate, worldID] = await hre.ethers.getSigners();
+        const userID = social_graph.registerCandidate("Jim", 1)
+        expect(await voting.connect(candidate).registerAsCandidate("Jim")).to.emit(voting, "UserRegistered")
+
+        const old_zcash_address = social_graph.create_address()
+
+        const worldIDRegister = social_graph.registerWorldID(old_zcash_address.pk)
+
+        const tx_mint = {
+            commitment: worldIDRegister.tx_mint.cm,
+            value: worldIDRegister.tx_mint.value,
+            k: worldIDRegister.tx_mint.k,
+            s: worldIDRegister.tx_mint.s
+        }
+
+        expect(await voting.connect(worldID).registerAsWorldIDHolder(
+            worldID.address, 1234, 1234, [1234,1234,1234,1234,1234,1234,1234,1234], tx_mint
+        )).to.emit(voting, "WorldIDRegistered")
+
+        const new_zcash_key_pair_1 = social_graph.create_address()
+        const new_zcash_key_pair_2 = social_graph.create_address()
+
+        const weight = 50
+
+        const voted = await social_graph.vote(worldIDRegister.coin, old_zcash_address, new_zcash_key_pair_1.pk, new_zcash_key_pair_2.pk, userID, weight)
+        const tx_pour = {
+            rt: voted.tx_pour.rt,
+            sn_old: voted.tx_pour.sn_old,
+            cm_1: voted.tx_pour.new_cm_1,
+            cm_2: voted.tx_pour.new_cm_2,
+            v_pub: voted.tx_pour.v_pub,
+            info: voted.tx_pour.info,
+            // pk_sig: voted.tx_pour.key,
+            pubkey: voted.tx_pour.pubkey,
+            h: voted.tx_pour.h,
+            proof: hre.ethers.hexlify(voted.tx_pour.proof.proof),
+            // sig: voted.tx_pour.signature,
+            sig: voted.tx_pour.signatureString,
+            publicInputs: voted.tx_pour.proof.publicInputs
+        }
+
+        await expect(voting.verifyPour(tx_pour, false)).to.be.reverted
     })
 
     it("Should not recommend a candidate that is not on-chain", async () => {   
@@ -382,6 +573,7 @@ describe("Voting Contract Tests", function () {
             .to.revertedWith("WorldcoinSocialGraph: INSUFFICIENT_VOTING_POWER");
     });
 
+
     it("Should allow the user to claim back voting power and get rewards", async () => {
         const social_graph = new PrivateGraph()
         const [candidate, worldID1, worldID2, worldID3, worldID4, worldID5, worldID6, worldID7] = await hre.ethers.getSigners();
@@ -480,7 +672,56 @@ describe("Voting Contract Tests", function () {
             publicInputs: claim_rewards.pour_tx.proof.publicInputs
         }
 
-
         expect(await voting.connect(worldID1).claimRewards(candidate.address, claim_tx)).to.emit(voting, "RewardClaimed")
     })
+
+    it("Should recommend a candidate", async () => {   
+        const social_graph = new PrivateGraph()
+        const [candidate, worldID] = await hre.ethers.getSigners();
+        const userID = social_graph.registerCandidate("Jim", 1)
+        expect(await voting.connect(candidate).registerAsCandidate("Jim")).to.emit(voting, "UserRegistered")
+
+        const old_zcash_address = social_graph.create_address()
+
+        const worldIDRegister = social_graph.registerWorldID(old_zcash_address.pk)
+
+        const tx_mint = {
+            commitment: worldIDRegister.tx_mint.cm,
+            value: worldIDRegister.tx_mint.value,
+            k: worldIDRegister.tx_mint.k,
+            s: worldIDRegister.tx_mint.s
+        }
+
+        expect(await voting.connect(worldID).registerAsWorldIDHolder(
+            worldID.address, 1234, 1234, [1234,1234,1234,1234,1234,1234,1234,1234], tx_mint
+        )).to.emit(voting, "WorldIDRegistered")
+
+        const new_zcash_key_pair_1 = social_graph.create_address()
+        const new_zcash_key_pair_2 = social_graph.create_address()
+
+        const weight = 50
+
+        const voted = await social_graph.vote(worldIDRegister.coin, old_zcash_address, new_zcash_key_pair_1.pk, new_zcash_key_pair_2.pk, userID, weight)
+        const tx_pour = {
+            rt: voted.tx_pour.rt,
+            sn_old: voted.tx_pour.sn_old,
+            cm_1: voted.tx_pour.new_cm_1,
+            cm_2: voted.tx_pour.new_cm_2,
+            v_pub: voted.tx_pour.v_pub,
+            info: voted.tx_pour.info,
+            // pk_sig: voted.tx_pour.key,
+            pk_sig: hre.ethers.encodeBytes32String("A"),
+            h: voted.tx_pour.h,
+            proof: hre.ethers.hexlify(voted.tx_pour.proof.proof),
+            // sig: voted.tx_pour.signature,
+            sig: hre.ethers.encodeBytes32String("B"),
+            publicInputs: voted.tx_pour.proof.publicInputs
+        }
+
+        await expect(voting.connect(worldID).claimRewards(
+            candidate.address, tx_pour
+        )).to.be.reverted
+    })
+
+
 });

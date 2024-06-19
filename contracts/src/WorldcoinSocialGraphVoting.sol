@@ -93,7 +93,6 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
      */
     function registerAsCandidate(string calldata _name) public {
         require(users[msg.sender].status == Status.UNREGISTERED, "WorldcoinSocialGraph: INVALID_USER");
-        require(!candidateTreeNonEmpty[msg.sender], "WorldcoinSocialGraph: CANDIDATE_TREE_ALREADY_EXISTS");
         BinaryIMT.initWithDefaultZeroes(candidateTrees[msg.sender], depth);
         candidateTreeNonEmpty[msg.sender] = true;
         // add user to user map
@@ -171,16 +170,6 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
         ) {
             return false;
         }
-
-        // Verify pour circuit proof
-        bytes32[] memory publicInputs = new bytes32[](7);
-        publicInputs[0] = bytes32(tx_pour.rt);
-        publicInputs[1] = bytes32(tx_pour.sn_old);
-        publicInputs[2] = bytes32(tx_pour.cm_1);
-        publicInputs[3] = bytes32(tx_pour.cm_2);
-        publicInputs[4] = bytes32(tx_pour.v_pub);
-        publicInputs[5] = bytes32(h_sig);
-        publicInputs[6] = bytes32(tx_pour.h);
 
         if (!called_by_vote) {
             return (claimVerifier.verify(tx_pour.proof, tx_pour.publicInputs));
