@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
-import {FakeWorldcoinVerifier} from "./FakeWorldCoinVerifier.sol";
 import {WorldcoinSocialGraphStorage} from "./WorldcoinSocialGraphStorage.sol";
 import {PoseidonT4} from "../lib/poseidon-solidity/contracts/PoseidonT4.sol";
 import {PoseidonT2} from "../lib/poseidon-solidity/contracts/PoseidonT2.sol";
@@ -10,7 +9,6 @@ import {BinaryIMT, BinaryIMTData} from "../lib/zk-kit.solidity/packages/imt/cont
 import {UltraVerifier as ClaimUltraVerifier} from "./claim_plonk_vk.sol";
 import {UltraVerifier as VoteUltraVerifier} from "./vote_plonk_vk.sol";
 import {IWorldcoinVerifier} from "./interfaces/IWorldcoinVerifier.sol";
-// import {UltraVerifier as VoteUltraVerifier} from "./plonk_vk.sol";
 
 contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
     IWorldcoinVerifier public immutable worldIDVerificationContract;

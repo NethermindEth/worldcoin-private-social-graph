@@ -1,72 +1,25 @@
 import hre from "hardhat";
 import { expect, assert} from 'chai';
-
+import { Contract } from "ethers";
 import { loadFixture } from "@nomicfoundation/hardhat-toolbox-viem/network-helpers";
 
 import { PrivateGraph } from "../src/core/private-graph";
 import { Address, Register, Voting } from "../src/core/structs";
 import { mint, verifyMint } from "../src/core/mint";
-
-const deployVoting = async () => {
-    console.log("Deploy Voting")
-
-    const poseidon3Lib = await hre.ethers.deployContract("poseidon-solidity/PoseidonT3.sol:PoseidonT3")
-    const poseidon3LibAddr = await poseidon3Lib.getAddress()
-    console.log("Deploy Poseidon 3:", poseidon3LibAddr)
-    
-    const binaryIMTFactory = await hre.ethers.getContractFactory("BinaryIMT",
-        {
-            libraries: {
-                PoseidonT3: poseidon3LibAddr
-            }
-        }
-    )
-    const binaryIMT= await binaryIMTFactory.deploy()
-    const binaryIMTLibAddr = await binaryIMT.getAddress()
-    console.log("Deploy IMT:", binaryIMTLibAddr)
-    
-    const poseidon2Lib = await hre.ethers.deployContract("PoseidonT2")
-    const poseidon2LibAddr = await poseidon2Lib.getAddress()
-    console.log("Deploy Poseidon 2:", poseidon2LibAddr)
-
-    const poseidon4Lib = await hre.ethers.deployContract("PoseidonT4")
-    const poseidon4LibAddr = await poseidon4Lib.getAddress()
-    console.log("Deploy Poseidon 4:", poseidon4LibAddr)
-            
-    const voteVerifier = await hre.ethers.deployContract("contracts/src/vote_plonk_vk.sol:UltraVerifier")
-    const voteVerifierAddr = await voteVerifier.getAddress()
-    console.log("Deploy vote verifier:", voteVerifierAddr)
-
-    const claimVerifier = await hre.ethers.deployContract("contracts/src/claim_plonk_vk.sol:UltraVerifier")
-    const claimVerifierAddr = await claimVerifier.getAddress()
-    console.log("Deploy claim verifier:", claimVerifierAddr)
-    
-    const worldcoinVerifier = await hre.ethers.deployContract("WorldcoinVerifierMock")
-    const worldcoinVerifierAddr = await worldcoinVerifier.getAddress()
-    console.log("Deploy worldcoin verifier:", worldcoinVerifierAddr)
-
-    const votingFactory = await hre.ethers.getContractFactory("WorldcoinSocialGraphVoting", 
-        {
-            libraries: {
-                PoseidonT2: poseidon2LibAddr,
-                PoseidonT4: poseidon4LibAddr,
-                BinaryIMT: binaryIMTLibAddr
-            }
-        }
-    )
-
-    const voting = await votingFactory.deploy(worldcoinVerifierAddr, voteVerifierAddr, claimVerifierAddr)
-    const votingAddr = await voting.getAddress()
-    console.log("Deploy voting: ", votingAddr)
-  
-    return { voting, worldcoinVerifier, voteVerifier, claimVerifier };
-};
+import { deployVoting } from "./Utils";
 
 describe("Voting Contract Tests", function () {
-    it("Should verify mint tx", async () => {
-        const [deployer, candidate] = await hre.ethers.getSigners()
-        const { voting, worldcoinVerifier, voteVerifier, claimVerifier } = await loadFixture(deployVoting);
+    let voting: Contract, worldcoinVerifier: Contract, voteVerifier: Contract, claimVerifier: Contract;
 
+    beforeEach(async () => {
+        const deploymentResult = await loadFixture(deployVoting);
+        voting = deploymentResult.voting;
+        worldcoinVerifier = deploymentResult.worldcoinVerifier;
+        voteVerifier = deploymentResult.voteVerifier;
+        claimVerifier = deploymentResult.claimVerifier;
+    });
+
+    it("Should verify mint tx", async () => {
         const m = mint(10n, 100)
         expect(verifyMint(m.coin.cm, m.tx_mint.value, m.tx_mint.k)).to.be.true
         const mint_tx = {
@@ -74,15 +27,12 @@ describe("Voting Contract Tests", function () {
             value: m.tx_mint.value,
             k: m.tx_mint.k,
             s: m.tx_mint.s
-    
         }
         expect(await voting.verifyMint(mint_tx)).to.be.true
     })
 
     it("Should not verify incorrect mint tx", async () => {
         const [deployer, candidate] = await hre.ethers.getSigners()
-        const { voting, worldcoinVerifier, voteVerifier, claimVerifier } = await loadFixture(deployVoting);
-
         const mint_tx = {
             commitment: 10,
             value: 10,
@@ -95,8 +45,6 @@ describe("Voting Contract Tests", function () {
 
     it("Should register a candidate", async () => {
         const [deployer, candidate] = await hre.ethers.getSigners()
-        const { voting, worldcoinVerifier, voteVerifier, claimVerifier } = await loadFixture(deployVoting);
-        
         expect(await voting.connect(candidate).registerAsCandidate("Bob")).to.emit(voting, "UserRegistered")
         const can = await voting.users(candidate.address)
         assert(can.name == "Bob", "Must have correct name")
@@ -106,7 +54,6 @@ describe("Voting Contract Tests", function () {
 
     it("Should not register a candidate twice", async () => {
         const [deployer, candidate] = await hre.ethers.getSigners()
-        const { voting, worldcoinVerifier, voteVerifier, claimVerifier } = await loadFixture(deployVoting);
         expect(await voting.connect(candidate).registerAsCandidate("Bob")).to.emit(voting, "UserRegistered");
         const can = await voting.users(candidate.address)
         await expect(voting.connect(candidate).registerAsCandidate("Bob")).to.revertedWith("msg.sender is already registered");
@@ -128,9 +75,7 @@ describe("Voting Contract Tests", function () {
             s: s
         }
         
-        const [deployer, worldID] = await hre.ethers.getSigners()
-        const { voting, worldcoinVerifier, voteVerifier, claimVerifier } = await loadFixture(deployVoting);
-        
+        const [deployer, worldID] = await hre.ethers.getSigners();
         expect(await voting.connect(worldID).registerAsWorldIDHolder(
             worldID.address, 1234, 1234, [1234,1234,1234,1234,1234,1234,1234,1234], tx_mint
         )).to.emit(voting, "WorldIDRegistered")
@@ -140,9 +85,7 @@ describe("Voting Contract Tests", function () {
     })
 
     it("Should not register a worldID user with incorrect mint", async () => {
-        const [deployer, worldID] = await hre.ethers.getSigners()
-        const { voting, worldcoinVerifier, voteVerifier, claimVerifier } = await loadFixture(deployVoting);
-        
+        const [deployer, worldID] = await hre.ethers.getSigners();
         const tx_mint = {
             commitment: 10,
             value: 10,
@@ -156,8 +99,7 @@ describe("Voting Contract Tests", function () {
     })
 
     it("Should not register a worldID user with coin value not 100", async () => {
-        const [deployer, worldID] = await hre.ethers.getSigners()
-        const { voting, worldcoinVerifier, voteVerifier, claimVerifier } = await loadFixture(deployVoting);
+        const [deployer, worldID] = await hre.ethers.getSigners();
         
         const m = mint(10n, 0)
         const mint_tx = {
@@ -173,9 +115,7 @@ describe("Voting Contract Tests", function () {
 
     it("Should recommend a candidate", async () => {   
         const social_graph = new PrivateGraph()
-        const [candidate, worldID] = await hre.ethers.getSigners()
-        const { voting, worldcoinVerifier, voteVerifier, claimVerifier } = await loadFixture(deployVoting);
-
+        const [candidate, worldID] = await hre.ethers.getSigners();
         const userID = social_graph.registerCandidate("Jim", 1)
         expect(await voting.connect(candidate).registerAsCandidate("Jim")).to.emit(voting, "UserRegistered")
 
@@ -222,9 +162,7 @@ describe("Voting Contract Tests", function () {
 
     it("Should not recommend a candidate that is not on-chain", async () => {   
         const social_graph = new PrivateGraph()
-        const [candidate, worldID] = await hre.ethers.getSigners()
-        const { voting, worldcoinVerifier, voteVerifier, claimVerifier } = await loadFixture(deployVoting);
-
+        const [candidate, worldID] = await hre.ethers.getSigners();
         const userID = social_graph.registerCandidate("Jim", 1)
 
         const old_zcash_address = social_graph.create_address()
@@ -268,8 +206,6 @@ describe("Voting Contract Tests", function () {
         )).to.be.revertedWith("User voted for not a candidate")
     })
 
-
-
     it("Should penalise a malicious voter", async () => {
         const social_graph = new PrivateGraph();
         
@@ -289,8 +225,6 @@ describe("Voting Contract Tests", function () {
         }
 
         const [worldID, candidate] = await hre.ethers.getSigners();
-        const { voting, worldcoinVerifier, voteVerifier, claimVerifier } = await loadFixture(deployVoting);
-
         // Register candidate
         const userID = social_graph.registerCandidate("Jim")
         await expect(voting.connect(candidate).registerAsCandidate("Jim"))
@@ -346,9 +280,7 @@ describe("Voting Contract Tests", function () {
     it("Should update status to verified", async () => {
         const social_graph = new PrivateGraph()
         
-        const [candidate, worldID1, worldID2, worldID3, worldID4, worldID5, worldID6, worldID7] = await hre.ethers.getSigners()
-        const { voting, worldcoinVerifier, voteVerifier, claimVerifier } = await loadFixture(deployVoting);
-        
+        const [candidate, worldID1, worldID2, worldID3, worldID4, worldID5, worldID6, worldID7] = await hre.ethers.getSigners();
         const worldIDs = [worldID1, worldID2, worldID3, worldID4, worldID5, worldID6, worldID7]
         
         await expect(voting.connect(candidate).registerAsCandidate("Jim"))
@@ -413,10 +345,7 @@ describe("Voting Contract Tests", function () {
     it("Should not update status to verified if under threshold on-chain", async () => {
         const social_graph = new PrivateGraph()
         
-        const [candidate, worldID1, worldID2, worldID3] = await hre.ethers.getSigners()
-        const { voting, worldcoinVerifier, voteVerifier, claimVerifier } = await loadFixture(deployVoting);
-        
-        const worldIDs = [worldID1, worldID2, worldID3]
+        const [candidate] = await hre.ethers.getSigners();
         
         await expect(voting.connect(candidate).registerAsCandidate("Jim"))
             .to.emit(voting, "UserRegistered");
@@ -452,16 +381,13 @@ describe("Voting Contract Tests", function () {
 
     it("Should allow the user to claim back voting power and get rewards", async () => {
         const social_graph = new PrivateGraph()
-        const [candidate, worldID1, worldID2, worldID3, worldID4, worldID5, worldID6, worldID7] = await hre.ethers.getSigners()
-        const { voting, worldcoinVerifier, voteVerifier, claimVerifier } = await loadFixture(deployVoting);
-        
+        const [candidate, worldID1, worldID2, worldID3, worldID4, worldID5, worldID6, worldID7] = await hre.ethers.getSigners();
         const worldIDs = [worldID1, worldID2, worldID3, worldID4, worldID5, worldID6, worldID7]
 
         await expect(voting.connect(candidate).registerAsCandidate("Jim"))
             .to.emit(voting, "UserRegistered");
 
         let curr_epoch = (await hre.ethers.provider.getBlockNumber() / 50064) + 1
-        console.log(curr_epoch)
         const userID = social_graph.registerCandidate("Jim", curr_epoch)
 
         const weight = 100
@@ -482,7 +408,6 @@ describe("Voting Contract Tests", function () {
             expect(await voting.connect(worldIDs[i]).registerAsWorldIDHolder(
                 worldIDs[i].address, 1234, 1234, [1234,1234,1234,1234,1234,1234,1234,1234], tx_mint
             )).to.emit(voting, "WorldIDRegistered");
-
 
             let new_zcash_key_pair_1 = social_graph.create_address()
             let new_zcash_key_pair_2 = social_graph.create_address()
@@ -514,7 +439,6 @@ describe("Voting Contract Tests", function () {
         }
 
         curr_epoch = (await hre.ethers.provider.getBlockNumber() / 50064) + 1
-        console.log(curr_epoch)
         let update_status = social_graph.update_status_verified(userID, curr_epoch)
         const mint_tx = {
             commitment: update_status.tx_mint.cm,
@@ -529,9 +453,6 @@ describe("Voting Contract Tests", function () {
         for (var i = 0; i < 50065; i++) {
             await hre.ethers.provider.send("evm_mine")
         }
-
-        console.log(await hre.ethers.provider.getBlockNumber())
-
         const old_coin = votes[0].coin_2
         const old_address = addrs_2[0]
 
