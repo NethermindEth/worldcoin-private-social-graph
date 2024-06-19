@@ -182,11 +182,9 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
         publicInputs[5] = bytes32(h_sig);
         publicInputs[6] = bytes32(tx_pour.h);
 
-        // TODO: FIX VERIFICATION ERROR
         if (!called_by_vote) {
             return (claimVerifier.verify(tx_pour.proof, tx_pour.publicInputs));
         } else {
-            
             return (voteVerifier.verify(tx_pour.proof, tx_pour.publicInputs));
         }
     }
