@@ -33,6 +33,7 @@ export const deployVoting = async () => {
         {
             libraries: {
                 PoseidonT4: poseidon4LibAddr,
+                PoseidonT2: poseidon2LibAddr,
                 BinaryIMT: binaryIMTLibAddr
             }
         }

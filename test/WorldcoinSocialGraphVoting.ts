@@ -199,15 +199,12 @@ describe("Voting Contract Tests", function () {
             cm_2: voted.tx_pour.new_cm_2,
             v_pub: voted.tx_pour.v_pub,
             info: voted.tx_pour.info,
-            // pk_sig: voted.tx_pour.key,
-            pk_sig: hre.ethers.encodeBytes32String("A"),
+            pubkey: voted.tx_pour.pubkey,
             h: voted.tx_pour.h,
             proof: hre.ethers.hexlify(voted.tx_pour.proof.proof),
-            // sig: voted.tx_pour.signature,
-            sig: hre.ethers.encodeBytes32String("B"),
-            publicInputs: voted.tx_pour.proof.publicInputs
+            sig: voted.tx_pour.signatureString,
+            publicInputs: voted.tx_pour.proof.publicInputs        
         }
-
         expect(await voting.connect(worldID).recommendCandidate (
             tx_pour, weight, candidate.address
         )).to.emit(voting, "CandidateRecommended")
@@ -459,7 +456,7 @@ describe("Voting Contract Tests", function () {
 
         const weight = 100     
 
-        for (var i = 0; i < 6; i++) {
+        for (var i = 0; i < 7; i++) {
             old_zcash_address = social_graph.create_address();
             worldIDRegister = social_graph.registerWorldID(old_zcash_address.pk)
 
@@ -478,7 +475,6 @@ describe("Voting Contract Tests", function () {
         await expect(voting.connect(candidate).updateStatusVerified(mint_tx))
             .to.revertedWith("WorldcoinSocialGraph: INSUFFICIENT_VOTING_POWER");
     });
-
 
     it("Should allow the user to claim back voting power and get rewards", async () => {
         const social_graph = new PrivateGraph()
@@ -569,19 +565,17 @@ describe("Voting Contract Tests", function () {
             cm_2: claim_rewards.pour_tx.new_cm_2,
             v_pub: claim_rewards.pour_tx.v_pub,
             info: claim_rewards.pour_tx.info,
-            // pk_sig: voted.tx_pour.key,
-            pk_sig: hre.ethers.encodeBytes32String("A"),
+            pubkey: claim_rewards.pour_tx.pubkey,
             h: claim_rewards.pour_tx.h,
             proof: hre.ethers.hexlify(claim_rewards.pour_tx.proof.proof),
-            // sig: voted.tx_pour.signature,
-            sig: hre.ethers.encodeBytes32String("B"),
+            sig: claim_rewards.pour_tx.signatureString,
             publicInputs: claim_rewards.pour_tx.proof.publicInputs
-        }
+    }
 
         expect(await voting.connect(worldID1).claimRewards(candidate.address, claim_tx)).to.emit(voting, "RewardClaimed")
     })
 
-    it("Should recommend a candidate", async () => {   
+    it("Should not be able to claim for a non-verified user", async () => {   
         const social_graph = new PrivateGraph()
         const [candidate, worldID] = await hre.ethers.getSigners();
         const userID = social_graph.registerCandidate("Jim", 1)
@@ -608,19 +602,17 @@ describe("Voting Contract Tests", function () {
         const weight = 50
 
         const voted = await social_graph.vote(worldIDRegister.coin, old_zcash_address, new_zcash_key_pair_1.pk, new_zcash_key_pair_2.pk, userID, weight)
-        const tx_pour = {
+        let tx_pour = {
             rt: voted.tx_pour.rt,
             sn_old: voted.tx_pour.sn_old,
             cm_1: voted.tx_pour.new_cm_1,
             cm_2: voted.tx_pour.new_cm_2,
             v_pub: voted.tx_pour.v_pub,
             info: voted.tx_pour.info,
-            // pk_sig: voted.tx_pour.key,
-            pk_sig: hre.ethers.encodeBytes32String("A"),
+            pubkey: voted.tx_pour.pubkey,
             h: voted.tx_pour.h,
             proof: hre.ethers.hexlify(voted.tx_pour.proof.proof),
-            // sig: voted.tx_pour.signature,
-            sig: hre.ethers.encodeBytes32String("B"),
+            sig: voted.tx_pour.signatureString,
             publicInputs: voted.tx_pour.proof.publicInputs
         }
 
