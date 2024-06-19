@@ -2,6 +2,7 @@ import { BNInput, ec, SignatureInput } from "elliptic"
 const EC = new ec('secp256k1')
 import { Tree } from "./tree"
 import { getRandomValues } from "crypto"
+import { ProofData } from "@noir-lang/noir_js"
 
 export type Coin = {
     public_key: bigint // address pk
@@ -202,7 +203,7 @@ export type Tx_Pour = {
     key: ECDSA_address // one time signature public key
     pubkey?: string // public key of the user
     h: bigint // hash of signature pk
-    proof: string // noir proof
+    proof: ProofData // noir proof
     signature: ec.Signature // signature of public instances, proof and info
     signatureString?: string // signature of public instances, proof and info
 }

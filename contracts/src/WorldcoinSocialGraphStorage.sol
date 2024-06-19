@@ -17,7 +17,7 @@ contract WorldcoinSocialGraphStorage {
         UNREGISTERED,
         WORLD_ID_HOLDER,
         CANDIDATE,
-        VERIFIED_IDENTITIY
+        VERIFIED_IDENTITY
     }
 
     struct User {

@@ -11,6 +11,9 @@ import keccak256 from "keccak256";
 
 const EC = new ec('secp256k1')
 
+import { proveVote, proveClaim, verifyClaim, verifyVote  } from "./prover";
+import { InputMap, ProofData } from "@noir-lang/noir_js";
+
 /**
  * 
  * @param rt - voting tree root || candidate tree root
@@ -93,106 +96,39 @@ export async function pour(
 
     // TODO: HAVE THIS READ THE PROOF FROM CIRCUITS
     let pour_instance: any[] = []
-    let proof = ""
-
+    const inputs = {
+        h: h.toString(),
+        h_sig: h_sig.toString(),
+        indices: path.pathIndices.map(i => i.toString()),
+        new_cm_1: new_cm_1.toString(),
+        new_cm_2: new_cm_2.toString(),
+        new_coin_1_commitment: coin_1.cm.toString(),
+        new_coin_1_nullifier_seed: coin_1.seed.toString(),
+        new_coin_1_pk_address: coin_1.public_key.toString(),
+        new_coin_1_r: coin_1.r.toString(),
+        new_coin_1_value: coin_1.value.toString(),
+        new_coin_2_commitment: coin_2.cm.toString(),
+        new_coin_2_nullifier_seed: coin_2.seed.toString(),
+        new_coin_2_pk_address: coin_2.public_key.toString(),
+        new_coin_2_r: coin_2.r.toString(),
+        new_coin_2_value: coin_2.value.toString(),
+        old_coin_commitment: old_coin.cm.toString(),
+        old_coin_nullifier_seed: old_coin.seed.toString(),
+        old_coin_pk_address: old_coin.public_key.toString(),
+        old_coin_r: old_coin.r.toString(),
+        old_coin_value: old_coin.value.toString(),
+        old_sk: old_sk.toString(),
+        old_sn: sn_old.toString(),
+        root: rt.toString(),
+        siblings: path.siblings.map(i => i.toString()),
+        v_pub: v_pub.toString()
+    };
+    let proof: ProofData
     // call Noir pour circuit
     if (!is_called_by_vote) {
-        // call claim pour
-        const claim_path = "circuits/claimPour/Prover.toml"
-
-        let pathIndicesString = "["
-        let siblingsString = "["
-
-        for (var i = 0; i < 32 ; i++) {
-            pathIndicesString += "\"" + path.pathIndices[i] + "\","
-            siblingsString += "\"" + path.siblings[i] + "\","
-        }
-
-        pathIndicesString += "]"
-        siblingsString += "]"
-
-        const inputs = "h=\"" + h + "\"\n" + 
-        "h_sig=\"" + h_sig + "\"\n" + 
-        "indices=" + pathIndicesString + "\n" + 
-        "new_cm_1=\"" + new_cm_1 + "\"\n" + 
-        "new_cm_2=\"" + new_cm_2 + "\"\n" + 
-        "new_coin_1_commitment=\"" + coin_1.cm + "\"\n" + 
-        "new_coin_1_nullifier_seed=\"" + coin_1.seed + "\"\n" + 
-        "new_coin_1_pk_address=\"" + coin_1.public_key + "\"\n" + 
-        "new_coin_1_r=\"" + coin_1.r + "\"\n" + 
-        "new_coin_1_value=\"" + coin_1.value + "\"\n" + 
-        "new_coin_2_commitment=\"" + coin_2.cm + "\"\n" + 
-        "new_coin_2_nullifier_seed=\"" + coin_2.seed + "\"\n" + 
-        "new_coin_2_pk_address=\"" + coin_2.public_key + "\"\n" + 
-        "new_coin_2_r=\"" + coin_2.r + "\"\n" + 
-        "new_coin_2_value=\"" + coin_2.value + "\"\n" + 
-        "old_coin_commitment=\"" + old_coin.cm + "\"\n" + 
-        "old_coin_nullifier_seed=\"" + old_coin.seed + "\"\n" + 
-        "old_coin_pk_address=\"" + old_coin.public_key + "\"\n" + 
-        "old_coin_r=\"" + old_coin.r + "\"\n" + 
-        "old_coin_value=\"" + old_coin.value + "\"\n" + 
-        "old_sk=\"" + old_sk + "\"\n" + 
-        "old_sn=\"" + sn_old + "\"\n" + 
-        "root=\"" + rt + "\"\n" + 
-        "siblings=" + siblingsString + "\n" + 
-        "v_pub=" + v_pub.toString() + "\n";
-
-        writeFileSync(claim_path, inputs)
-
-        await runCommand('./circuits/claimPour/gen_proof.sh')
-
-        const claim_proof_path = "circuits/claimPour/proofs/claimPour.proof"
-        pour_instance = [rt, sn_old, new_cm_1, new_cm_2, v_pub, h_sig, h]
-        proof += readFileSync(claim_proof_path, 'utf-8')
-    } else {
-        // call vote pour
-        const vote_path = "circuits/votePour/Prover.toml"
-
-        let pathIndicesString = "["
-        let siblingsString = "["
-
-        for (var i = 0; i < 32 ; i++) {
-            pathIndicesString += "\"" + path.pathIndices[i] + "\","
-            siblingsString += "\"" + path.siblings[i] + "\","
-        }
-
-        pathIndicesString += "]"
-        siblingsString += "]"
-
-        const inputs = "h=\"" + h + "\"\n" + 
-        "h_sig=\"" + h_sig + "\"\n" + 
-        "indices=" + pathIndicesString + "\n" + 
-        "new_cm_1=\"" + new_cm_1 + "\"\n" + 
-        "new_cm_2=\"" + new_cm_2 + "\"\n" + 
-        "new_coin_1_commitment=\"" + coin_1.cm + "\"\n" + 
-        "new_coin_1_nullifier_seed=\"" + coin_1.seed + "\"\n" + 
-        "new_coin_1_pk_address=\"" + coin_1.public_key + "\"\n" + 
-        "new_coin_1_r=\"" + coin_1.r + "\"\n" + 
-        "new_coin_1_value=\"" + coin_1.value + "\"\n" + 
-        "new_coin_2_commitment=\"" + coin_2.cm + "\"\n" + 
-        "new_coin_2_nullifier_seed=\"" + coin_2.seed + "\"\n" + 
-        "new_coin_2_pk_address=\"" + coin_2.public_key + "\"\n" + 
-        "new_coin_2_r=\"" + coin_2.r + "\"\n" + 
-        "new_coin_2_value=\"" + coin_2.value + "\"\n" + 
-        "old_coin_commitment=\"" + old_coin.cm + "\"\n" + 
-        "old_coin_nullifier_seed=\"" + old_coin.seed + "\"\n" + 
-        "old_coin_pk_address=\"" + old_coin.public_key + "\"\n" + 
-        "old_coin_r=\"" + old_coin.r + "\"\n" + 
-        "old_coin_value=\"" + old_coin.value + "\"\n" + 
-        "old_sk=\"" + old_sk + "\"\n" + 
-        "old_sn=\"" + sn_old + "\"\n" + 
-        "root=\"" + rt + "\"\n" + 
-        "siblings=" + siblingsString + "\n" + 
-        "v_pub=" + v_pub.toString() + "\n";
-
-        writeFileSync(vote_path, inputs)
-
-        await runCommand('./circuits/votePour/gen_proof.sh')
-
-        // TODO: HAVE THIS READ THE PROOF FROM CIRCUITS
-        const vote_proof_path = "circuits/votePour/proofs/votePour.proof"
-        pour_instance = [rt, sn_old, new_cm_1, new_cm_2, v_pub, h_sig, h]
-        proof += readFileSync(vote_proof_path, 'utf-8')
+        proof = await proveClaim(inputs)
+    } else {        
+        proof = await proveVote(inputs)
     }
 
     // Sign message
@@ -313,9 +249,12 @@ export async function verifyPour(
 
     // verify circuit proof
     if (!pour.is_called_by_vote) {
-        await runCommand('./circuits/claimPour/verify_proof.sh')
+        // await runCommand('./circuits/claimPour/verify_proof.sh')
+        return verifyClaim(pour.tx_pour.proof)
+
     } else {
-        await runCommand('./circuits/votePour/verify_proof.sh')
+        // await runCommand('./circuits/votePour/verify_proof.sh')
+        return verifyVote(pour.tx_pour.proof)
     }
     return true 
 } 

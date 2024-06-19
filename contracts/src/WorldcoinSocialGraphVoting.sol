@@ -6,8 +6,8 @@ import { PoseidonT4 } from "../lib/poseidon-solidity/contracts/PoseidonT4.sol";
 import { PoseidonT2 } from "../lib/poseidon-solidity/contracts/PoseidonT2.sol";
 import { ABDKMath64x64 } from "../lib/abdk-libraries-solidity/ABDKMath64x64.sol";
 import { BinaryIMT, BinaryIMTData } from "../lib/zk-kit.solidity/packages/imt/contracts/BinaryIMT.sol";
-import { UltraVerifier as ClaimUltraVerifier } from "./claim_plonk_vk.sol";
-import { UltraVerifier as VoteUltraVerifier } from "./vote_plonk_vk.sol";
+import { UltraVerifier as ClaimUltraVerifier } from "../../circuits/claimPour/contract/claimPour/plonk_vk.sol";
+import { UltraVerifier as VoteUltraVerifier } from "../../circuits/votePour/contract/votePour/plonk_vk.sol";
 import { IWorldcoinVerifier } from "./interfaces/IWorldcoinVerifier.sol";
 import { SignatureChecker } from "../lib/openzeppelin-contracts/contracts/utils/cryptography/SignatureChecker.sol";
 
@@ -136,6 +136,16 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
     }
 
     /**
+     * @notice will verify if the given uint lies in the range of a hash function
+     * @param pub - the value which is the hash output
+     * @return bool - boolean as to whether or not the checks pass
+     * @dev will be used to verify if the parameters are correctly passed
+     */
+    function isValidHash(uint256 pub) public view returns (bool) {
+        return pub < 21888242871839275222246405745257275088548364400416034343698204186575808495617;
+    }
+
+    /**
      * @notice will verify the pour transaction provided to either vote/claim
      * @param tx_pour - the pour transaction to be verified
      * @param called_by_vote - boolean to check if the calling function is vote = true OR claim = false
@@ -154,6 +164,13 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
         // Verify signature
         require(verifySignature(tx_pour, h_sig), "WorldcoinSocialGraph: INVALID_SIGNATURE");
 
+        if (
+            !isValidHash(tx_pour.rt) || !isValidHash(tx_pour.sn_old) || !isValidHash(tx_pour.cm_1)
+                || !isValidHash(tx_pour.cm_2) || !isValidHash(tx_pour.h)
+        ) {
+            return false;
+        }
+
         // Verify pour circuit proof
         bytes32[] memory publicInputs = new bytes32[](7);
         publicInputs[0] = bytes32(tx_pour.rt);
@@ -166,12 +183,10 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
 
         // TODO: FIX VERIFICATION ERROR
         if (!called_by_vote) {
-            // return true;
-            // return (claimVerifier.verify(tx_pour.proof, publicInputs));
+            return (claimVerifier.verify(tx_pour.proof, tx_pour.publicInputs));
         } else {
             bytes memory proofBytes = bytes(tx_pour.proof);
-            return (voteVerifier.verify(proofBytes, publicInputs));
-            // return true;
+            return (voteVerifier.verify(proofBytes, tx_pour.publicInputs));
         }
     }
 
@@ -189,10 +204,10 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
         voteMerkleRoot.push(new_root);
         voteMerkleRootExists[new_root] = true;
         uint256 c_epoch = currentEpoch();
-        users[msg.sender].status = Status.VERIFIED_IDENTITIY;
+        users[msg.sender].status = Status.VERIFIED_IDENTITY;
         users[msg.sender].epochV = c_epoch;
         rewardsPerEpoch[c_epoch].sum += users[msg.sender].v_in;
-        emit CandidateVerified(msg.sender, Status.VERIFIED_IDENTITIY);
+        emit CandidateVerified(msg.sender, Status.VERIFIED_IDENTITY);
     }
 
     /**
@@ -204,7 +219,7 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
      */
     function claimRewards(address _user, Pour calldata tx_pour) public {
         //check user is verified
-        require(users[_user].status == Status.VERIFIED_IDENTITIY, "WorldcoinSocialGraph: NOT_VERIFIED_USER");
+        require(users[_user].status == Status.VERIFIED_IDENTITY, "WorldcoinSocialGraph: NOT_VERIFIED_USER");
 
         //compute current epoch
         uint256 c_epoch = currentEpoch();
