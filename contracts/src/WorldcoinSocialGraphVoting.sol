@@ -163,7 +163,7 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
         uint256 h_sig = PoseidonT2.hash([uint256(uint160(tx_pour.pubkey))]);
 
         // Verify signature
-        require(verifySignature(tx_pour, h_sig), "WorldcoinSocialGraph: INVALID_SIGNATURE");
+        require(verifySignature(tx_pour, h_sig), "WorldcoinSocialGraph: INVALID_POUR_SIGNATURE");
 
         if (
             !isValidHash(tx_pour.rt) || !isValidHash(tx_pour.sn_old) || !isValidHash(tx_pour.cm_1)
