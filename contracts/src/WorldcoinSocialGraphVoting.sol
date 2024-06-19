@@ -6,8 +6,8 @@ import { PoseidonT4 } from "../lib/poseidon-solidity/contracts/PoseidonT4.sol";
 import { PoseidonT2 } from "../lib/poseidon-solidity/contracts/PoseidonT2.sol";
 import { ABDKMath64x64 } from "../lib/abdk-libraries-solidity/ABDKMath64x64.sol";
 import { BinaryIMT, BinaryIMTData } from "../lib/zk-kit.solidity/packages/imt/contracts/BinaryIMT.sol";
-import { UltraVerifier as ClaimUltraVerifier } from "../../circuits/claimPour/contract/claimPour/plonk_vk.sol";
-import { UltraVerifier as VoteUltraVerifier } from "../../circuits/votePour/contract/votePour/plonk_vk.sol";
+import { UltraVerifier as ClaimUltraVerifier } from "./claim_plonk_vk.sol";
+import { UltraVerifier as VoteUltraVerifier } from "./vote_plonk_vk.sol";
 import { IWorldcoinVerifier } from "./interfaces/IWorldcoinVerifier.sol";
 import { SignatureChecker } from "../lib/openzeppelin-contracts/contracts/utils/cryptography/SignatureChecker.sol";
 
