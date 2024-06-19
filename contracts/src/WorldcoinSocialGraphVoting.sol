@@ -1,14 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
-import {WorldcoinSocialGraphStorage} from "./WorldcoinSocialGraphStorage.sol";
-import {PoseidonT4} from "../lib/poseidon-solidity/contracts/PoseidonT4.sol";
-import {PoseidonT2} from "../lib/poseidon-solidity/contracts/PoseidonT2.sol";
-import {ABDKMath64x64} from "../lib/abdk-libraries-solidity/ABDKMath64x64.sol";
-import {BinaryIMT, BinaryIMTData} from "../lib/zk-kit.solidity/packages/imt/contracts/BinaryIMT.sol";
-import {UltraVerifier as ClaimUltraVerifier} from "./claim_plonk_vk.sol";
-import {UltraVerifier as VoteUltraVerifier} from "./vote_plonk_vk.sol";
-import {IWorldcoinVerifier} from "./interfaces/IWorldcoinVerifier.sol";
+import { WorldcoinSocialGraphStorage } from "./WorldcoinSocialGraphStorage.sol";
+import { PoseidonT4 } from "../lib/poseidon-solidity/contracts/PoseidonT4.sol";
+import { PoseidonT2 } from "../lib/poseidon-solidity/contracts/PoseidonT2.sol";
+import { ABDKMath64x64 } from "../lib/abdk-libraries-solidity/ABDKMath64x64.sol";
+import { BinaryIMT, BinaryIMTData } from "../lib/zk-kit.solidity/packages/imt/contracts/BinaryIMT.sol";
+import { UltraVerifier as ClaimUltraVerifier } from "./claim_plonk_vk.sol";
+import { UltraVerifier as VoteUltraVerifier } from "./vote_plonk_vk.sol";
+import { IWorldcoinVerifier } from "./interfaces/IWorldcoinVerifier.sol";
+import { SignatureChecker } from "../lib/openzeppelin-contracts/contracts/utils/cryptography/SignatureChecker.sol";
 
 contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
     IWorldcoinVerifier public immutable worldIDVerificationContract;
@@ -35,13 +36,9 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
      * @param _claimVerifier - contract address of the claim circuit solidity verifier
      */
     constructor(
-        
         IWorldcoinVerifier _worldIDVerificationContract,
-       
         VoteUltraVerifier _voteVerifier,
-       
         ClaimUltraVerifier _claimVerifier
-    
     ) {
         // setup worldID verification
         worldIDVerificationContract = _worldIDVerificationContract;
@@ -276,7 +273,6 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
     /**
      * @notice verify signature
      */
-
     function abiEncodeTxPourParams(Pour memory _txPour, uint256 h_sig) private pure returns (bytes memory) {
         return abi.encodePacked(
             _txPour.rt,
