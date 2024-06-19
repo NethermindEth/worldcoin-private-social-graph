@@ -3,7 +3,6 @@ pragma solidity ^0.8.13;
 
 import {WorldcoinSocialGraphStorage} from "./WorldcoinSocialGraphStorage.sol";
 import {PoseidonT4} from "../lib/poseidon-solidity/contracts/PoseidonT4.sol";
-import {PoseidonT2} from "../lib/poseidon-solidity/contracts/PoseidonT2.sol";
 import {ABDKMath64x64} from "../lib/abdk-libraries-solidity/ABDKMath64x64.sol";
 import {BinaryIMT, BinaryIMTData} from "../lib/zk-kit.solidity/packages/imt/contracts/BinaryIMT.sol";
 import {UltraVerifier as ClaimUltraVerifier} from "../../circuits/claimPour/contract/claimPour/plonk_vk.sol";
@@ -86,7 +85,6 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
      */
     function registerAsCandidate(string calldata _name) public {
         require(users[msg.sender].status == Status.UNREGISTERED, "msg.sender is already registered");
-        require(!candidateTreeNonEmpty[msg.sender], "msg.sender tree already exists");
         BinaryIMT.initWithDefaultZeroes(candidateTrees[msg.sender], depth);
         candidateTreeNonEmpty[msg.sender] = true;
         // add user to user map
@@ -133,7 +131,7 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
      * @return bool - boolean as to whether or not the checks pass
      * @dev will be used to verify if the parameters are correctly passed
      */
-    function isValidHash(uint256 pub) public view returns (bool) {
+    function isValidHash(uint256 pub) public pure returns (bool) {
         return pub < 21888242871839275222246405745257275088548364400416034343698204186575808495617;
     }
 
@@ -149,9 +147,6 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
         if (voteNullifiersExists[tx_pour.sn_old] || (!voteMerkleRootExists[tx_pour.rt] && called_by_vote)) {
             return false;
         }
-
-        // compute h_sig = poseidon(pk_sig)
-        uint256 h_sig = PoseidonT2.hash([uint256(tx_pour.pk_sig)]);
 
         if (
             !isValidHash(tx_pour.rt) || !isValidHash(tx_pour.sn_old) || !isValidHash(tx_pour.cm_1)

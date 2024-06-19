@@ -8,12 +8,10 @@ export async function proveVote(inputs: InputMap) {
         const backend = new BarretenbergBackend(vote_circuit as CompiledCircuit);
         const noir = new Noir(vote_circuit as CompiledCircuit, backend);
         const proof = await noir.generateProof(inputs);
-        console.log(proof)
 
         const verificationKey = await backend.getVerificationKey();
         const verifier = new Verifier();
         const isValid = await verifier.verifyProof(proof, verificationKey);
-        console.log("Prove vote: ",isValid)
         return proof
     } catch (error) {
         console.log(error)
@@ -27,7 +25,6 @@ export async function verifyVote(proof: ProofData) {
     const verificationKey = await backend.getVerificationKey();
     const verifier = new Verifier();
     const isValid = await verifier.verifyProof(proof, verificationKey);
-    console.log("Verify vote Proof: ",isValid)
     return isValid
 }
 
@@ -36,15 +33,12 @@ export async function proveClaim(inputs: InputMap) {
         const backend = new BarretenbergBackend(claim_circuit as CompiledCircuit);
         const noir = new Noir(claim_circuit as CompiledCircuit, backend);
         const proof = await noir.generateProof(inputs);
-        console.log(proof)
 
         const verificationKey = await backend.getVerificationKey();
         const verifier = new Verifier();
         const isValid = await verifier.verifyProof(proof, verificationKey);
-        console.log(isValid)
         return proof
     } catch (error) {
-        console.log(error)
         throw new Error
     }
 }

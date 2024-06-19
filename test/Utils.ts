@@ -32,7 +32,6 @@ export const deployVoting = async () => {
     const votingFactory = await hre.ethers.getContractFactory("WorldcoinSocialGraphVoting", 
         {
             libraries: {
-                PoseidonT2: poseidon2LibAddr,
                 PoseidonT4: poseidon4LibAddr,
                 BinaryIMT: binaryIMTLibAddr
             }
