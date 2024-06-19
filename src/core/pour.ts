@@ -85,9 +85,11 @@ export async function pour(
 
     // generate One-time strongly-unforgeable digital signatures (ECDSA) key-pair
     const sig_key_pair : ECDSA_address = new ECDSA_address()
+    const wallet = new ethers.Wallet(sig_key_pair.get_priv())
+
     // generate signature hashes
     // hash sig pub key
-    const ethereumAddress = await getEthereumAddress(sig_key_pair.get_pub_key());
+    const ethereumAddress = await wallet.getAddress();
     const pubke = ethers.getUint(ethereumAddress);
     const h_sig = poseidon1([pubke]);
 
@@ -143,55 +145,34 @@ export async function pour(
     
     const msgHash = ethers.keccak256(encodedData);
     const hashBytes = ethers.getBytes(msgHash);
-    let signature = sig_key_pair.sign(hashBytes);
+    let signature = await wallet.signMessage(hashBytes);
     // verify signature
-    if(!sig_key_pair.verify(hashBytes, signature)) {
-        throw new Error("Signature did not verify")
+    if(ethers.verifyMessage(hashBytes, signature) !== ethereumAddress) {
+        throw new Error("Signature is invalid");
     }
 
-    // restrict the signature to only accept low S values- sigs are of the form (r,S) according to BIP 62: https://github.com/bitcoin/bips/blob/master/bip-0062.mediawiki#low-s-values-in-signatures
-    
-    // get order but since it is of value BN | undefined | null we need to ensure it is of type BN
-    let order = EC.n
-    // let order_bn = await ensure_bn(order) // get promised value of type BN
-    if (order === null || order === undefined) {
-        throw new Error("Value is of type undefined or null")
-    } else {
-        let halforder = order.shrn(1)
-        // must be smaller than halforder of BN -> 0xFFFFFFFF FFFFFFFF FFFFFFFF FFFFFFFE BAAEDCE6 AF48A03B BFD25E8C D0364140
-        if (signature.s.gt(halforder)) {
-            signature.s = signature.s.sub(halforder)
-        }
-
-        const r = '0x' + signature.r.toString('hex').padStart(64, '0');
-        const s = '0x' + signature.s.toString('hex').padStart(64, '0');
-        const v = signature.recoveryParam ? signature.recoveryParam + 27 : 27;
-        const signatureString = r + s.slice(2) + (v.toString(16).length === 1 ? '0' + v.toString(16) : v?.toString(16));
-
-        const tx_pour: Tx_Pour = {
-            rt: rt,
-            sn_old: sn_old,
-            new_cm_1: coin_1.cm,
-            new_cm_2: coin_2.cm,
-            v_pub: v_pub,
-            info: info,
-            key: sig_key_pair,
-            pubkey: ethereumAddress,
-            h: h,
-            proof: proof,
-            signature: signature,
-            signatureString: signatureString
-        }
-    
-        const new_pour : Pour = {
-            coin_1: coin_1, 
-            coin_2: coin_2, 
-            tx_pour: tx_pour,
-            is_called_by_vote: is_called_by_vote
-        }
-
-        return new_pour
+    const tx_pour: Tx_Pour = {
+        rt: rt,
+        sn_old: sn_old,
+        new_cm_1: coin_1.cm,
+        new_cm_2: coin_2.cm,
+        v_pub: v_pub,
+        info: info,
+        key: sig_key_pair,
+        pubkey: ethereumAddress,
+        h: h,
+        proof: proof,
+        signatureString: signature
     }
+
+    const new_pour : Pour = {
+        coin_1: coin_1, 
+        coin_2: coin_2, 
+        tx_pour: tx_pour,
+        is_called_by_vote: is_called_by_vote
+    }
+
+    return new_pour
 }
 
 /**
@@ -207,92 +188,55 @@ export async function pour(
 export async function verifyPour(
     tree: Tree,
     pour: Pour,
-    vote_nullifiers: bigint[],
-    old_sk: bigint
-) : Promise<boolean> {
-    // check sn_old is not part of old nullifiers
-    if(vote_nullifiers.includes(pour.tx_pour.sn_old)) {
-        return false
+    voteNullifiers: bigint[],
+    oldSk: bigint
+): Promise<boolean> {
+    const { tx_pour } = pour;
+
+    // Check if sn_old is part of old nullifiers
+    if (voteNullifiers.includes(tx_pour.sn_old)) {
+        return false;
     }
 
-    // check rt is part of old merkle roots
-    if(!tree.roots.includes(pour.tx_pour.rt)) {
-        return false
+    // Check if rt is part of old merkle roots
+    if (!tree.roots.includes(tx_pour.rt)) {
+        return false;
     }
 
-    // check h corresponds h_sig
-    const h_sig = poseidon1([ethers.getUint(pour.tx_pour.pubkey as string)])
-    if (pour.tx_pour.h != poseidon4([old_sk, 2, 0, h_sig])) {
-        return false
+    // Check if h corresponds to h_sig
+    const hSig = poseidon1([ethers.getUint(tx_pour.pubkey as string)]);
+    if (tx_pour.h !== poseidon4([oldSk, 2, 0, hSig])) {
+        return false;
     }
 
-    // verify signature
-    const pour_instance: any = []
-    
-    const msg: any = [pour_instance, pour.tx_pour.proof, pour.tx_pour.info]
-
-    const sig = pour.tx_pour.signature
-    
-    if (!pour.tx_pour.key.verify(msg, pour.tx_pour.signature)) {
-        let order = EC.n
-        if (order === null || order === undefined) {
-            throw new Error("Value is of type undefined or null")
-        } else {
-            let halforder = order.shrn(1)
-            // must be smaller than halforder of BN -> 0xFFFFFFFF FFFFFFFF FFFFFFFF FFFFFFFE BAAEDCE6 AF48A03B BFD25E8C D0364140
-            sig.s = sig.s.add(halforder)
-            if (!pour.tx_pour.key.verify(msg, sig)){
-                return false
-            }
-        }
+    // Check signature
+    const message: any = [
+        tx_pour.rt,
+        tx_pour.sn_old,
+        tx_pour.new_cm_1,
+        tx_pour.new_cm_2,
+        tx_pour.v_pub,
+        hSig,
+        tx_pour.h,
+        ethers.hexlify(tx_pour.proof.proof),
+        tx_pour.info,
+    ];
+    const encodedData = ethers.solidityPacked(
+        ["uint256", "uint256", "uint256", "uint256", "uint256", "uint256", "uint256", "bytes", "string"],
+        message
+    );
+    const msgHash = ethers.keccak256(encodedData);
+    const hashBytes = ethers.getBytes(msgHash);
+    const signature = tx_pour.signatureString as string;
+    if (ethers.verifyMessage(hashBytes, signature) !== tx_pour.pubkey) {
+        return false;
     }
 
-    // verify circuit proof
+    // Verify circuit proof
     if (!pour.is_called_by_vote) {
-        // await runCommand('./circuits/claimPour/verify_proof.sh')
-        return verifyClaim(pour.tx_pour.proof)
-
+        return verifyClaim(tx_pour.proof);
     } else {
-        // await runCommand('./circuits/votePour/verify_proof.sh')
-        return verifyVote(pour.tx_pour.proof)
+        return verifyVote(tx_pour.proof);
     }
-    return true 
 }
-
-// Utility function to promisify exec
-const execAsync = (command: string): Promise<{ stdout: string, stderr: string }> => {
-    return new Promise((resolve, reject) => {
-        exec(command, (error, stdout, stderr) => {
-            if (error) {
-                reject({ error, stderr });
-            } else {
-                resolve({ stdout, stderr });
-            }
-        });
-    });
-};
-
-const getEthereumAddress = async (publicKey: string) => {
-    // Remove the '04' prefix if the public key is uncompressed
-    const publicKeyBytes = publicKey.startsWith('04') ? publicKey.slice(2) : publicKey;
-    // Hash the public key bytes
-    const hash = keccak256(Buffer.from(publicKeyBytes, 'hex'));
-    // Take the last 20 bytes of the hash
-    const address = '0x' + hash.slice(-20).toString('hex');
-    return address;
-}
-
-// Example function that uses the execAsync function
-const runCommand = async (command: string): Promise<void> => {
-    try {
-        const { stdout, stderr } = await execAsync(command);
-        console.log('stdout:', stdout);
-        if (stderr != "") {
-            console.log('stderr:', stderr);
-            throw new Error(stderr)
-        }
-    } catch (error) {
-        console.error('Error:', error);
-    }
-};
 

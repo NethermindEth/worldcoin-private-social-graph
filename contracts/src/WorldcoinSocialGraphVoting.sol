@@ -163,7 +163,7 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
         uint256 h_sig = PoseidonT2.hash([uint256(uint160(tx_pour.pubkey))]);
 
         // Verify signature
-        require(verifySignature(tx_pour, h_sig), "WorldcoinSocialGraph: INVALID_SIGNATURE");
+        require(verifySignature(tx_pour, h_sig), "WorldcoinSocialGraph: INVALID_POUR_SIGNATURE");
 
         if (
             !isValidHash(tx_pour.rt) || !isValidHash(tx_pour.sn_old) || !isValidHash(tx_pour.cm_1)
@@ -278,7 +278,9 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
     /// @notice Function to verify signature
     function verifySignature(Pour memory txPour, uint256 h_sig) public view returns (bool) {
         bytes32 _hashedMessage = keccak256(abiEncodeTxPourParams(txPour, h_sig));
-        return SignatureChecker.isValidSignatureNow(txPour.pubkey, _hashedMessage, txPour.sig);
+        // Prefix hash
+        bytes32 prefixedHash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", _hashedMessage));
+        return SignatureChecker.isValidSignatureNow(txPour.pubkey, prefixedHash, txPour.sig);
     }
 
     ///////////////////////
