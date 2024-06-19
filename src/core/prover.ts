@@ -1,6 +1,5 @@
 import vote_circuit from "../../circuits/votePour/target/votePour.json";
 import claim_circuit from "../../circuits/claimPour/target/claimPour.json";
-// import tinyCircuit from "../../circuits/tinyCircuit/target/tinyCircuit.json"
 import { BarretenbergBackend, BarretenbergVerifier as Verifier } from '@noir-lang/backend_barretenberg';
 import { CompiledCircuit, InputMap, Noir, ProofData } from '@noir-lang/noir_js';
 
