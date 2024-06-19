@@ -95,7 +95,8 @@ export async function pour(
     const h = poseidon4([old_sk, 2, 0, h_sig]) // padding taken from zcash doc
 
     // TODO: HAVE THIS READ THE PROOF FROM CIRCUITS
-    let pour_instance: any[] = []
+    let pour_instance: any[] = [rt, sn_old, new_cm_1, new_cm_2, v_pub, h_sig, h]
+
     const inputs = {
         h: h.toString(),
         h_sig: h_sig.toString(),
@@ -124,6 +125,7 @@ export async function pour(
         v_pub: v_pub.toString()
     };
     let proof: ProofData
+    
     // call Noir pour circuit
     if (!is_called_by_vote) {
         proof = await proveClaim(inputs)
@@ -132,11 +134,10 @@ export async function pour(
     }
 
     // Sign message
-    let msg: any = [...pour_instance, proof, info];
-
+    let msg: any = [...pour_instance, ethers.hexlify(proof.proof), info];
     // Encode the data using ethers.solidityPack
     const encodedData = ethers.solidityPacked(
-        ["uint256", "uint256", "uint256", "uint256", "uint256", "uint256", "uint256", "string", "string"],
+        ["uint256", "uint256", "uint256", "uint256", "uint256", "uint256", "uint256", "bytes", "string"],
         msg
     );
     
@@ -164,7 +165,7 @@ export async function pour(
 
         const r = '0x' + signature.r.toString('hex').padStart(64, '0');
         const s = '0x' + signature.s.toString('hex').padStart(64, '0');
-        const v = signature.recoveryParam as number + 27;
+        const v = signature.recoveryParam ? signature.recoveryParam + 27 : 27;
         const signatureString = r + s.slice(2) + (v.toString(16).length === 1 ? '0' + v.toString(16) : v?.toString(16));
 
         const tx_pour: Tx_Pour = {
@@ -232,7 +233,6 @@ export async function verifyPour(
 
     const sig = pour.tx_pour.signature
     
-
     if (!pour.tx_pour.key.verify(msg, pour.tx_pour.signature)) {
         let order = EC.n
         if (order === null || order === undefined) {
@@ -257,7 +257,7 @@ export async function verifyPour(
         return verifyVote(pour.tx_pour.proof)
     }
     return true 
-} 
+}
 
 // Utility function to promisify exec
 const execAsync = (command: string): Promise<{ stdout: string, stderr: string }> => {

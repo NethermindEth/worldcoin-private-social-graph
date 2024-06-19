@@ -141,7 +141,7 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
      * @return bool - boolean as to whether or not the checks pass
      * @dev will be used to verify if the parameters are correctly passed
      */
-    function isValidHash(uint256 pub) public view returns (bool) {
+    function isValidHash(uint256 pub) public pure returns (bool) {
         return
             pub < 21_888_242_871_839_275_222_246_405_745_257_275_088_548_364_400_416_034_343_698_204_186_575_808_495_617;
     }
@@ -186,8 +186,8 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
         if (!called_by_vote) {
             return (claimVerifier.verify(tx_pour.proof, tx_pour.publicInputs));
         } else {
-            bytes memory proofBytes = bytes(tx_pour.proof);
-            return (voteVerifier.verify(proofBytes, tx_pour.publicInputs));
+            
+            return (voteVerifier.verify(tx_pour.proof, tx_pour.publicInputs));
         }
     }
 

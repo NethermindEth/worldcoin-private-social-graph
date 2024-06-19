@@ -20,10 +20,10 @@ export const deployVoting = async () => {
     const poseidon4Lib = await hre.ethers.deployContract("PoseidonT4")
     const poseidon4LibAddr = await poseidon4Lib.getAddress()
             
-    const voteVerifier = await hre.ethers.deployContract("circuits/votePour/contract/votePour/plonk_vk.sol:UltraVerifier")
+    const voteVerifier = await hre.ethers.deployContract("contracts/src/vote_plonk_vk.sol:UltraVerifier")
     const voteVerifierAddr = await voteVerifier.getAddress()
 
-    const claimVerifier = await hre.ethers.deployContract("circuits/claimPour/contract/claimPour/plonk_vk.sol:UltraVerifier")
+    const claimVerifier = await hre.ethers.deployContract("contracts/src/claim_plonk_vk.sol:UltraVerifier")
     const claimVerifierAddr = await claimVerifier.getAddress()
     
     const worldcoinVerifier = await hre.ethers.deployContract("WorldcoinVerifierMock")
