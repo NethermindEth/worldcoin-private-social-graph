@@ -298,7 +298,7 @@ describe("Voting Contract Tests", function () {
 
         const weight = 100     
 
-        for (var i = 0; i < 2; i++) {
+        for (var i = 0; i < 7; i++) {
             old_zcash_address = social_graph.create_address();
             worldIDRegister = social_graph.registerWorldID(old_zcash_address.pk)
             let tx_mint = {
@@ -363,7 +363,7 @@ describe("Voting Contract Tests", function () {
 
         const weight = 100     
 
-        for (var i = 0; i < 1; i++) {
+        for (var i = 0; i < 6; i++) {
             old_zcash_address = social_graph.create_address();
             worldIDRegister = social_graph.registerWorldID(old_zcash_address.pk)
 
@@ -399,7 +399,7 @@ describe("Voting Contract Tests", function () {
         let votes = []
         let addrs_2 = []
 
-        for (var i = 0; i < 3; i++) {
+        for (var i = 0; i < 7; i++) {
             let old_zcash_address = social_graph.create_address()
 
             let register = social_graph.registerWorldID(old_zcash_address.pk)
