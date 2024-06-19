@@ -1,18 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
-import { FakeWorldcoinVerifier } from "./FakeWorldCoinVerifier.sol";
-import { WorldcoinSocialGraphStorage } from "./WorldcoinSocialGraphStorage.sol";
-import { PoseidonT4 } from "@poseidon/contracts/PoseidonT4.sol";
-import { PoseidonT2 } from "@poseidon/contracts/PoseidonT2.sol";
-import { ABDKMath64x64 } from "@abdk-library/ABDKMath64x64.sol";
-import { BinaryIMT, BinaryIMTData } from "../lib/zk-kit.solidity/packages/imt/contracts/BinaryIMT.sol";
-import { SignatureChecker } from "@openzeppelin/contracts/utils/cryptography/SignatureChecker.sol";
-import { UltraVerifier as ClaimUltraVerifier } from "./claim-plonk-verifier.sol";
-import { UltraVerifier as VoteUltraVerifier } from "./vote-plonk-verifier.sol";
+import {WorldcoinSocialGraphStorage} from "./WorldcoinSocialGraphStorage.sol";
+import {PoseidonT4} from "../lib/poseidon-solidity/contracts/PoseidonT4.sol";
+import {PoseidonT2} from "../lib/poseidon-solidity/contracts/PoseidonT2.sol";
+import {ABDKMath64x64} from "../lib/abdk-libraries-solidity/ABDKMath64x64.sol";
+import {BinaryIMT, BinaryIMTData} from "../lib/zk-kit.solidity/packages/imt/contracts/BinaryIMT.sol";
+import {UltraVerifier as ClaimUltraVerifier} from "./claim_plonk_vk.sol";
+import {UltraVerifier as VoteUltraVerifier} from "./vote_plonk_vk.sol";
+import {IWorldcoinVerifier} from "./interfaces/IWorldcoinVerifier.sol";
 
 contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
-    FakeWorldcoinVerifier public immutable worldIDVerificationContract;
+    IWorldcoinVerifier public immutable worldIDVerificationContract;
     ClaimUltraVerifier immutable claimVerifier;
     VoteUltraVerifier immutable voteVerifier;
 
@@ -36,9 +35,13 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
      * @param _claimVerifier - contract address of the claim circuit solidity verifier
      */
     constructor(
-        FakeWorldcoinVerifier _worldIDVerificationContract,
+        
+        IWorldcoinVerifier _worldIDVerificationContract,
+       
         VoteUltraVerifier _voteVerifier,
+       
         ClaimUltraVerifier _claimVerifier
+    
     ) {
         // setup worldID verification
         worldIDVerificationContract = _worldIDVerificationContract;
@@ -144,7 +147,7 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
      *      finally circuit and zk proof are correct.
      */
     function verifyPour(Pour calldata tx_pour, bool called_by_vote) public view returns (bool) {
-        if (voteNullifiersExists[tx_pour.sn_old] || !voteMerkleRootExists[tx_pour.rt]) {
+        if (voteNullifiersExists[tx_pour.sn_old] || (!voteMerkleRootExists[tx_pour.rt] && called_by_vote)) {
             return false;
         }
 
@@ -166,11 +169,11 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
 
         // TODO: FIX VERIFICATION ERROR
         if (!called_by_vote) {
-            return true;
+            // return true;
             // return (claimVerifier.verify(tx_pour.proof, publicInputs));
         } else {
-            // return (voteVerifier.verify(tx_pour.proof, publicInputs));
-            return true;
+            return (voteVerifier.verify(tx_pour.proof, publicInputs));
+            // return true;
         }
     }
 

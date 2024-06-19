@@ -9,7 +9,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "jest -t 'Should allow users to claim back their voting power and their rewards'"
+    "test": "jest",
+    "test-contracts": "npx hardhat test test/WorldcoinSocialGraphVoting.ts"
   },
   "dependencies": {
     "@noir-lang/noir_js": "^0.29.0",
