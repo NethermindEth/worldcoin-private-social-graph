@@ -156,9 +156,9 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
         // TODO: FIX VERIFICATION ERROR
         if (!called_by_vote) {
             // return true;
-            // return (claimVerifier.verify(tx_pour.proof, publicInputs));
+            return (claimVerifier.verify(tx_pour.proof, tx_pour.publicInputs));
         } else {
-            return (voteVerifier.verify(tx_pour.proof, publicInputs));
+            return (voteVerifier.verify(tx_pour.proof, tx_pour.publicInputs));
             // return true;
         }
     }

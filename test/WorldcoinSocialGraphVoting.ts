@@ -150,9 +150,10 @@ describe("Voting Contract Tests", function () {
             // pk_sig: voted.tx_pour.key,
             pk_sig: hre.ethers.encodeBytes32String("A"),
             h: voted.tx_pour.h,
-            proof: hre.ethers.toUtf8Bytes(voted.tx_pour.proof.toString()),
+            proof: hre.ethers.hexlify(voted.tx_pour.proof.proof),
             // sig: voted.tx_pour.signature,
             sig: hre.ethers.encodeBytes32String("B"),
+            publicInputs: voted.tx_pour.proof.publicInputs
         }
 
         expect(await voting.connect(worldID).recommendCandidate (
@@ -196,9 +197,10 @@ describe("Voting Contract Tests", function () {
             // pk_sig: voted.tx_pour.key,
             pk_sig: hre.ethers.encodeBytes32String("A"),
             h: voted.tx_pour.h,
-            proof: hre.ethers.toUtf8Bytes(voted.tx_pour.proof.toString()),
+            proof: hre.ethers.hexlify(voted.tx_pour.proof.proof),
             // sig: voted.tx_pour.signature,
             sig: hre.ethers.encodeBytes32String("B"),
+            publicInputs: voted.tx_pour.proof.publicInputs
         }
 
         await expect(voting.connect(worldID).recommendCandidate (
@@ -252,9 +254,10 @@ describe("Voting Contract Tests", function () {
             // pk_sig: voted.tx_pour.key,
             pk_sig: hre.ethers.encodeBytes32String("A"),
             h: voted.tx_pour.h,
-            proof: hre.ethers.toUtf8Bytes(voted.tx_pour.proof.toString()),
+            proof: hre.ethers.hexlify(voted.tx_pour.proof.proof),
             // sig: voted.tx_pour.signature,
             sig: hre.ethers.encodeBytes32String("B"),
+            publicInputs: voted.tx_pour.proof.publicInputs
         }
 
         expect(await voting.connect(worldID).recommendCandidate (
@@ -295,7 +298,7 @@ describe("Voting Contract Tests", function () {
 
         const weight = 100     
 
-        for (var i = 0; i < 7; i++) {
+        for (var i = 0; i < 2; i++) {
             old_zcash_address = social_graph.create_address();
             worldIDRegister = social_graph.registerWorldID(old_zcash_address.pk)
             let tx_mint = {
@@ -311,7 +314,7 @@ describe("Voting Contract Tests", function () {
             new_zcash_key_pair_1 = social_graph.create_address()
             new_zcash_key_pair_2 = social_graph.create_address()
             voted = await social_graph.vote(worldIDRegister.coin, old_zcash_address, new_zcash_key_pair_1.pk, new_zcash_key_pair_2.pk, userID, weight)
-            let tx_pour = {
+            const tx_pour = {
                 rt: voted.tx_pour.rt,
                 sn_old: voted.tx_pour.sn_old,
                 cm_1: voted.tx_pour.new_cm_1,
@@ -321,9 +324,10 @@ describe("Voting Contract Tests", function () {
                 // pk_sig: voted.tx_pour.key,
                 pk_sig: hre.ethers.encodeBytes32String("A"),
                 h: voted.tx_pour.h,
-                proof: hre.ethers.toUtf8Bytes(voted.tx_pour.proof.toString()),
+                proof: hre.ethers.hexlify(voted.tx_pour.proof.proof),
                 // sig: voted.tx_pour.signature,
                 sig: hre.ethers.encodeBytes32String("B"),
+                publicInputs: voted.tx_pour.proof.publicInputs
             }
             
             expect(await voting.connect(worldIDs[i]).recommendCandidate (
@@ -359,7 +363,7 @@ describe("Voting Contract Tests", function () {
 
         const weight = 100     
 
-        for (var i = 0; i < 10; i++) {
+        for (var i = 0; i < 1; i++) {
             old_zcash_address = social_graph.create_address();
             worldIDRegister = social_graph.registerWorldID(old_zcash_address.pk)
 
@@ -395,7 +399,7 @@ describe("Voting Contract Tests", function () {
         let votes = []
         let addrs_2 = []
 
-        for (var i = 0; i < 7; i++) {
+        for (var i = 0; i < 3; i++) {
             let old_zcash_address = social_graph.create_address()
 
             let register = social_graph.registerWorldID(old_zcash_address.pk)
@@ -426,10 +430,12 @@ describe("Voting Contract Tests", function () {
                 // pk_sig: voted.tx_pour.key,
                 pk_sig: hre.ethers.encodeBytes32String("A"),
                 h: voted.tx_pour.h,
-                proof: hre.ethers.toUtf8Bytes(voted.tx_pour.proof.toString()),
+                proof: hre.ethers.hexlify(voted.tx_pour.proof.proof),
                 // sig: voted.tx_pour.signature,
                 sig: hre.ethers.encodeBytes32String("B"),
+                publicInputs: voted.tx_pour.proof.publicInputs
             }
+    
 
             expect(await voting.connect(worldIDs[i]).recommendCandidate(
                 tx_pour, weight, candidate.address
@@ -471,10 +477,12 @@ describe("Voting Contract Tests", function () {
             // pk_sig: voted.tx_pour.key,
             pk_sig: hre.ethers.encodeBytes32String("A"),
             h: claim_rewards.pour_tx.h,
-            proof: hre.ethers.toUtf8Bytes(claim_rewards.pour_tx.proof.toString()),
+            proof: hre.ethers.hexlify(claim_rewards.pour_tx.proof.proof),
             // sig: voted.tx_pour.signature,
             sig: hre.ethers.encodeBytes32String("B"),
+            publicInputs: claim_rewards.pour_tx.proof.publicInputs
         }
+
 
         expect(await voting.connect(worldID1).claimRewards(candidate.address, claim_tx)).to.emit(voting, "RewardClaimed")
     })

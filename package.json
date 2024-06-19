@@ -13,7 +13,6 @@
     "test-contracts": "npx hardhat test test/WorldcoinSocialGraphVoting.ts"
   },
   "dependencies": {
-    "@noir-lang/noir_js": "^0.29.0",
     "@tanstack/react-query": "^5.28.6",
     "@types/elliptic": "^6.4.18",
     "@types/react": "18.2.6",
@@ -36,7 +35,9 @@
     "wagmi": "^2.5.11"
   },
   "devDependencies": {
+    "@noir-lang/backend_barretenberg": "^0.29.0",
     "@noir-lang/noir_codegen": "^0.29.0",
+    "@noir-lang/noir_js": "^0.29.0",
     "@nomicfoundation/hardhat-chai-matchers": "^2.0.7",
     "@nomicfoundation/hardhat-ethers": "^3.0.6",
     "@nomicfoundation/hardhat-network-helpers": "^1.0.11",

@@ -70,5 +70,6 @@ contract WorldcoinSocialGraphStorage {
         uint256 h;
         bytes proof;
         bytes32 sig;
+        bytes32[] publicInputs;
     }
 }
