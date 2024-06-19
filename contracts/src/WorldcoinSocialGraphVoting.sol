@@ -142,7 +142,8 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
      * @dev will be used to verify if the parameters are correctly passed
      */
     function isValidHash(uint256 pub) public view returns (bool) {
-        return pub < 21888242871839275222246405745257275088548364400416034343698204186575808495617;
+        return
+            pub < 21_888_242_871_839_275_222_246_405_745_257_275_088_548_364_400_416_034_343_698_204_186_575_808_495_617;
     }
 
     /**

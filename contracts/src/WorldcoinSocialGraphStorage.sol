@@ -55,6 +55,7 @@ contract WorldcoinSocialGraphStorage {
         uint256 h;
         string proof;
         bytes sig;
+        bytes32[] publicInputs;
     }
 
     mapping(uint256 => Rewards) rewardsPerEpoch;
