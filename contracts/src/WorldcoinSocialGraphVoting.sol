@@ -148,8 +148,8 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
             return false;
         }
 
-        // compute h_sig = poseidon(pk_sig)
-        uint256 h_sig = PoseidonT2.hash([uint256(tx_pour.pk_sig)]);
+        // compute h_sig = poseidon(pubkey)
+        uint256 h_sig = PoseidonT2.hash([uint256(uint160(txPour.pubkey))]);
 
         // Verify signature
         require(verifySignature(tx_pour, h_sig), "WorldcoinSocialGraph: INVALID_SIGNATURE");
@@ -169,7 +169,8 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
             // return true;
             // return (claimVerifier.verify(tx_pour.proof, publicInputs));
         } else {
-            return (voteVerifier.verify(tx_pour.proof, publicInputs));
+            bytes memory proofBytes = bytes(tx_pour.proof);
+            return (voteVerifier.verify(proofBytes, publicInputs));
             // return true;
         }
     }
@@ -285,6 +286,5 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
             _txPour.proof,
             _txPour.info
         );
-        // should sign chain id, contract address, nonce
     }
 }
