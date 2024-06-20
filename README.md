@@ -97,8 +97,8 @@ Note that we use the same hash function without domain separation for both leave
 4. Worldcoin simulator: used to register WorldID holders during testing. Link: https://simulator.worldcoin.org/id/0x18310f83.
 5. Our design utilizes Zcash Merkle trees and techniques for spending and minting coins described in Zerocash: Decentralized Anonymous Payments from Bitcoin(extended version). Eli Ben-Sasson, Alessandro Chiesa, Christina Garman, Matthew Green, Ian Miers, Eran Tromer, Madars Virza.  http://zerocash-project.org/media/pdf/zerocash-extended-20140518.pdf.
 6. The penalise technique of our design is inspired by
-- Orfeas Stefanos Thyfronitis Litos, Dionysis Zindros: Trust Is Risk: A Decentralized Financial Trust Platform. IACR Cryptol. ePrint Arch. 2017: 156 (2017). https://eprint.iacr.org/2017/156.
-- BrightID. Bitu verification. https://brightid.gitbook.io/brightid/verifications/bitu-verification.
+	- Orfeas Stefanos Thyfronitis Litos, Dionysis Zindros: Trust Is Risk: A Decentralized Financial Trust Platform. IACR Cryptol. ePrint Arch. 2017: 156 (2017). https://eprint.iacr.org/2017/156.
+	- BrightID. Bitu verification. https://brightid.gitbook.io/brightid/verifications/bitu-verification.
 
 ### Licenses
 1. zk-kit and zk-kit.solidity: used for the incremental merkle tree implementation. Authors: Privacy and Scaling Explorations (privacy-scaling-explorations). Link: https://github.com/privacy-scaling-explorations/zk-kit and https://github.com/privacy-scaling-explorations/zk-kit.solidity.
