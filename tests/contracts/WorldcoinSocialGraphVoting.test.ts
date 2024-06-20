@@ -556,36 +556,13 @@ describe('Voting Contract Tests', function () {
         await expect(voting.connect(candidate).registerAsCandidate('Jim')).to.emit(voting, 'UserRegistered');
         const userID = social_graph.registerCandidate('Jim', 0);
 
-        let old_zcash_address: Address;
-        let worldIDRegister: Register;
-        let new_zcash_key_pair_1: Address;
-        let new_zcash_key_pair_2: Address;
-        let voted: Voting;
+        const fake_mint = mint(social_graph.create_address().pk, social_graph.candidates[userID].v_in)
 
-        const weight = 100;
-
-        for (var i = 0; i < 7; i++) {
-            old_zcash_address = social_graph.create_address();
-            worldIDRegister = social_graph.registerWorldID(old_zcash_address.pk);
-
-            new_zcash_key_pair_1 = social_graph.create_address();
-            new_zcash_key_pair_2 = social_graph.create_address();
-            voted = await social_graph.vote(
-                worldIDRegister.coin,
-                old_zcash_address,
-                new_zcash_key_pair_1.pk,
-                new_zcash_key_pair_2.pk,
-                userID,
-                weight
-            );
-        }
-
-        let update_status = social_graph.update_status_verified(userID, 10);
         const mint_tx = {
-            commitment: update_status.tx_mint.cm,
-            value: update_status.tx_mint.value,
-            k: update_status.tx_mint.k,
-            s: update_status.tx_mint.s,
+            commitment: fake_mint.tx_mint.cm,
+            value: fake_mint.tx_mint.value,
+            k: fake_mint.tx_mint.k,
+            s: fake_mint.tx_mint.s,
         };
         await expect(voting.connect(candidate).updateStatusVerified(mint_tx)).to.revertedWith(
             'WorldcoinSocialGraph: INSUFFICIENT_VOTING_POWER'
