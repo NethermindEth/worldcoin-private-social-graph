@@ -1,18 +1,12 @@
 import hre from "hardhat";
-import { ethers } from "ethers";
 import { expect, assert} from 'chai';
-import { IMTMerkleProof } from "@zk-kit/imt"
 import { Contract } from "ethers";
-import { poseidon1 } from "poseidon-lite";
 import { loadFixture } from "@nomicfoundation/hardhat-toolbox-viem/network-helpers";
-import { ec } from "elliptic"
 
 import { PrivateGraph } from "../../src/core/private-graph";
-import { Address, Coin, Pour, Register, Voting } from "../../src/core/structs";
+import { Address,  Register, Voting } from "../../src/core/structs";
 import { mint, verifyMint } from "../../src/core/mint";
-import { deployVoting } from "./helper/Utils.test";
-import { pour } from "../../src/core/pour";
-import { poseidon1 } from "poseidon-lite";
+import { deployVoting } from "./helper/Utils";
 
 describe("Voting Contract Tests", function () {
     let voting: Contract, worldcoinVerifier: Contract, voteVerifier: Contract, claimVerifier: Contract;

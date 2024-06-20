@@ -15,6 +15,7 @@ const config: HardhatUserConfig = {
   defaultNetwork: "hardhat",
   paths: {
     sources: "./contracts/src",
+    tests: "./tests/contracts",
   },
   
   solidity: {
