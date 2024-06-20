@@ -1,5 +1,5 @@
-import vote_circuit from "../../circuits/votePour/target/votePour.json";
-import claim_circuit from "../../circuits/claimPour/target/claimPour.json";
+import vote_circuit from '../../circuits/votePour/target/votePour.json';
+import claim_circuit from '../../circuits/claimPour/target/claimPour.json';
 import { BarretenbergBackend, BarretenbergVerifier as Verifier } from '@noir-lang/backend_barretenberg';
 import { CompiledCircuit, InputMap, Noir, ProofData } from '@noir-lang/noir_js';
 
@@ -12,10 +12,10 @@ export async function proveVote(inputs: InputMap) {
         const verificationKey = await backend.getVerificationKey();
         const verifier = new Verifier();
         const isValid = await verifier.verifyProof(proof, verificationKey);
-        return proof
+        return proof;
     } catch (error) {
-        console.log(error)
-        throw new Error
+        console.log(error);
+        throw new Error();
     }
 }
 
@@ -25,7 +25,7 @@ export async function verifyVote(proof: ProofData) {
     const verificationKey = await backend.getVerificationKey();
     const verifier = new Verifier();
     const isValid = await verifier.verifyProof(proof, verificationKey);
-    return isValid
+    return isValid;
 }
 
 export async function proveClaim(inputs: InputMap) {
@@ -37,9 +37,9 @@ export async function proveClaim(inputs: InputMap) {
         const verificationKey = await backend.getVerificationKey();
         const verifier = new Verifier();
         const isValid = await verifier.verifyProof(proof, verificationKey);
-        return proof
+        return proof;
     } catch (error) {
-        throw new Error
+        throw new Error();
     }
 }
 
@@ -49,6 +49,6 @@ export async function verifyClaim(proof: ProofData) {
     const verificationKey = await backend.getVerificationKey();
     const verifier = new Verifier();
     const isValid = await verifier.verifyProof(proof, verificationKey);
-    console.log("Verify claim Proof: ",isValid)
-    return isValid
+    console.log('Verify claim Proof: ', isValid);
+    return isValid;
 }
