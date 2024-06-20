@@ -128,7 +128,7 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
         uint256 new_root = BinaryIMT.insert(VotingTree, tx_pour.cm_1);
         voteMerkleRoot.push(new_root);
         voteMerkleRootExists[new_root] = true;
-        userIDMerkleRoot[_user].push(BinaryIMT.insert(candidateTrees[_user], tx_pour.cm_2));
+        userMerkleRoot[_user].push(BinaryIMT.insert(candidateTrees[_user], tx_pour.cm_2));
         users[_user].v_in += weight;
         users[_user].numberOfVotes++;
         emit CandidateRecommended(_user);
@@ -217,9 +217,9 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
         require(tx_pour.v_pub == rewardsPerEpoch[epoch].sum);
         require(verifyPour(tx_pour, false), "WorldcoinSocialGraph: POUR_VERIFICATION_FAILED");
 
-        userIDNullifiers[_user].push(tx_pour.sn_old);
+        userNullifiers[_user].push(tx_pour.sn_old);
 
-        sizeOfUserIDNullifiers[_user]++;
+        sizeOfUserNullifiers[_user]++;
 
         uint256 new_root = BinaryIMT.insert(VotingTree, tx_pour.cm_1);
 
@@ -228,7 +228,7 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
 
         rewardsMerkleRoot.push(BinaryIMT.insert(RewardsTree, tx_pour.cm_2));
 
-        if (sizeOfUserIDNullifiers[_user] == users[_user].numberOfVotes) {
+        if (sizeOfUserNullifiers[_user] == users[_user].numberOfVotes) {
             delete(candidateTrees[_user]);
             candidateTreeNonEmpty[_user] = false;
         }
@@ -248,7 +248,7 @@ contract WorldcoinSocialGraphVoting is WorldcoinSocialGraphStorage {
         require(users[msg.sender].status == Status.CANDIDATE, "WorldcoinSocialGraph: NOT_A_CANDIDATE");
 
         delete candidateTrees[msg.sender];
-        delete userIDMerkleRoot[msg.sender];
+        delete userMerkleRoot[msg.sender];
 
         users[msg.sender].v_in = 0;
         users[msg.sender].numberOfVotes = 0;

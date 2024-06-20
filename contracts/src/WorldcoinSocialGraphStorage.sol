@@ -22,9 +22,6 @@ contract WorldcoinSocialGraphStorage {
     /// @dev Array to store vote nullifiers
     uint256[] voteNullifiers;
 
-    /// @dev Array to store rewards nullifiers
-    uint256[] rewardsNullifiers;
-
     /// @dev Array to store vote Merkle roots
     uint256[] voteMerkleRoot;
 
@@ -117,10 +114,10 @@ contract WorldcoinSocialGraphStorage {
     mapping(address => bool) candidateTreeNonEmpty;
 
     /// @dev Maps user address to their corresponding nullifiers
-    mapping(address => uint256[]) userIDNullifiers;
+    mapping(address => uint256[]) userNullifiers;
 
     /// @dev Maps user address to the size of their nullifiers
-    mapping(address => uint256) sizeOfUserIDNullifiers;
+    mapping(address => uint256) sizeOfUserNullifiers;
 
     /// @dev Checks if a vote nullifier exists
     mapping(uint256 => bool) public voteNullifiersExists;
@@ -129,7 +126,7 @@ contract WorldcoinSocialGraphStorage {
     mapping(address => User) public users;
 
     /// @dev Mapping from user address to their corresponding Merkle roots
-    mapping(address => uint256[]) userIDMerkleRoot;
+    mapping(address => uint256[]) userMerkleRoot;
 
     /// @dev Checks if a vote Merkle root exists
     mapping(uint256 => bool) public voteMerkleRootExists;
