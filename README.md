@@ -75,7 +75,12 @@ After making changes to the contract, you should:
 - if your contract ABI has changed, restart the local web server
 
 ### Testing
-See the test folder [here](./tests). Test the circuits using `pnpm test-circuits` and test the contracts using `pnpm test-contracts`.
+See the test folder [here](./tests). 
+- To test the circuits, run `pnpm test-circuits`.
+- To test the contracts, follow:
+	- Add submodules: `git submodule update --init --recursive`
+	- Compile the contracts: `pnpm compile-contracts`
+	- Run tests for the contract: `pnpm test-contracts`
 
 #### Note
 When connecting your wallet to the local development environment, you will be prompted to add the network to your wallet.
