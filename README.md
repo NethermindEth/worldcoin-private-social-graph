@@ -1,6 +1,6 @@
 # Private social-graph based proof of personhood
 
-An additional layer for Worldcoin's proof of personhood. This project aims to build a private social-graph based proof i.e. the existing World ID users will be able to vouch for the humanness of other parties(who are not World ID users). This way, we will be able to expand the user database for World ID holders. The difference between a public and a private social-graph based proof is that in the private system, majority of the data about the users(including who has voted for whom) will be private.
+An additional layer for Worldcoin's proof of personhood. This project aims to build a private social-graph based proof i.e. the existing World ID users will be able to vouch for the humanness of other parties(who are not World ID users). This way, we will be able to expand the user database for World ID holders. The difference between a public and a private social-graph based proof of personhood is that in the private system, majority of the data about the users(including who has voted for whom) will be private.
 
 This project is [funded by Worldcoin](https://worldcoin.org/wave0-grant-recipients/nethermind-social-graph) (https://worldcoin.org/wave0-grant-recipients/nethermind-social-graph).
 
@@ -12,9 +12,15 @@ Implementation: Michael Belegris, Somya Gupta
 
 Thanks to Lazaro Raul Iglesias Vera, Sameer Kumar, Antonio Manuel Larriba Flor for reviewing and providing valuable suggestions and guidelines. 
 
-For an overview, the specification, more related work and Sybil and Game theoretic analysis please check our notion pages.
+For the project scope,the overview, the specification for both the public and private social-graph based proof of personhood, more related work and Sybil and Game theoretic analysis please check the following links.
 
-You can follow the instructions below taken from the README file of [https://github.com/worldcoin/world-id-onchain-template](https://github.com/worldcoin/world-id-onchain-template).
+Public social-graph based proof of personhood notion page: https://www.notion.so/EXT-Proof-of-Concept-for-Public-Social-Graph-Sybil-and-Incentives-analysis-af7af3271dc34094b8505410f6504b70?pvs=4.
+
+Private social-graph based proof of personhood notion page: [https://www.notion.so/nethermind/EXT-Proof-of-Concept-for-Private-Social-Graph-6404b66352c14aa8b52c77d4ab7733f6?pvs=4](https://www.notion.so/EXT-Proof-of-Concept-for-Private-Social-Graph-6404b66352c14aa8b52c77d4ab7733f6?pvs=21).
+
+Public social-graph based proof of personhood GitHub repository: https://github.com/NethermindEth/worldcoin-social-graph.
+
+You can follow the instructions below taken from the README file ofÂ [https://github.com/worldcoin/world-id-onchain-template](https://github.com/worldcoin/world-id-onchain-template).
 
 ## Local Development
 
@@ -97,7 +103,7 @@ Note that we use the same hash function without domain separation for both leave
 4. Worldcoin simulator: used to register WorldID holders during testing. Link: https://simulator.worldcoin.org/id/0x18310f83.
 5. Our design utilizes Zcash Merkle trees and techniques for spending and minting coins described in Zerocash: Decentralized Anonymous Payments from Bitcoin(extended version). Eli Ben-Sasson, Alessandro Chiesa, Christina Garman, Matthew Green, Ian Miers, Eran Tromer, Madars Virza.  http://zerocash-project.org/media/pdf/zerocash-extended-20140518.pdf.
 6. The penalise technique of our design is inspired by
-	- Orfeas Stefanos Thyfronitis Litos, Dionysis Zindros: Trust Is Risk: A Decentralized Financial Trust Platform. IACR Cryptol. ePrint Arch. 2017: 156 (2017). https://eprint.iacr.org/2017/156.
+	- Orfeas Stefanos Thyfronitis Litos,Â Dionysis Zindros: Trust Is Risk: A Decentralized Financial Trust Platform.Â IACR Cryptol. ePrint Arch.Â 2017:Â 156Â (2017). https://eprint.iacr.org/2017/156.
 	- BrightID. Bitu verification. https://brightid.gitbook.io/brightid/verifications/bitu-verification.
 
 ### Licenses
@@ -148,7 +154,7 @@ The above copyright notice and this permission notice shall be included in all c
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ```
 
-5. ABDKMath64x64 library: used for implementing the inverse exponential function. Authors: ABDK (abdk-consulting). Link: https://github.com/abdk-consulting/abdk-libraries-solidity. License: BSD-4-Clause license.
+5. ABDKMath64x64 library: used for implementing the inverse exponential function. Authors: ABDK (abdk-consulting). Link: https://github.com/abdk-consulting/abdk-libraries-solidity. License:Â BSD-4-Clause license.
 License:
 ```bash
 Copyright (c) 2019, ABDK Consulting
