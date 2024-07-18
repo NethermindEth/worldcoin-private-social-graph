@@ -12,13 +12,13 @@ Implementation: Michael Belegris, Somya Gupta
 
 Thanks to Lazaro Raul Iglesias Vera, Sameer Kumar, Antonio Manuel Larriba Flor for reviewing and providing valuable suggestions and guidelines. 
 
-For the project scope, the overview, the specification for both the public and private social-graph based proof of personhood, more related work and Sybil and Game theoretic analysis please check the following links.
+For the project scope, the overview, the specification for both the public and private social-graph based proof of personhood, more related work and Sybil and Game theoretic analysis, and the implemetation of the public social-graph based proof of personhood, please check the following links.
 
-Public social-graph based proof of personhood notion page: https://www.notion.so/EXT-Proof-of-Concept-for-Public-Social-Graph-Sybil-and-Incentives-analysis-af7af3271dc34094b8505410f6504b70?pvs=4.
+- Public social-graph based proof of personhood notion page: https://www.notion.so/EXT-Proof-of-Concept-for-Public-Social-Graph-Sybil-and-Incentives-analysis-af7af3271dc34094b8505410f6504b70?pvs=4.
 
-Private social-graph based proof of personhood notion page: [https://www.notion.so/nethermind/EXT-Proof-of-Concept-for-Private-Social-Graph-6404b66352c14aa8b52c77d4ab7733f6?pvs=4](https://www.notion.so/EXT-Proof-of-Concept-for-Private-Social-Graph-6404b66352c14aa8b52c77d4ab7733f6?pvs=21).
+- Private social-graph based proof of personhood notion page: [https://www.notion.so/nethermind/EXT-Proof-of-Concept-for-Private-Social-Graph-6404b66352c14aa8b52c77d4ab7733f6?pvs=4](https://www.notion.so/EXT-Proof-of-Concept-for-Private-Social-Graph-6404b66352c14aa8b52c77d4ab7733f6?pvs=21).
 
-Public social-graph based proof of personhood GitHub repository: https://github.com/NethermindEth/worldcoin-social-graph.
+- Public social-graph based proof of personhood GitHub repository: https://github.com/NethermindEth/worldcoin-social-graph.
 
 You can follow the instructions below taken from the README file of [https://github.com/worldcoin/world-id-onchain-template](https://github.com/worldcoin/world-id-onchain-template).
 
