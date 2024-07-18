@@ -12,7 +12,7 @@ Implementation: Michael Belegris, Somya Gupta
 
 Thanks to Lazaro Raul Iglesias Vera, Sameer Kumar, Antonio Manuel Larriba Flor for reviewing and providing valuable suggestions and guidelines. 
 
-For the project scope, the overview, the specification for both the public and private social-graph based proof of personhood, more related work and Sybil and Game theoretic analysis, and the implemetation of the public social-graph based proof of personhood, please check the following links.
+For the project scope, the overview, the specification for both the public and private social-graph based proof of personhood, more related work, Sybil and Game theoretic analysis, and the implemetation of the public social-graph based proof of personhood, please check the following links.
 
 - Public social-graph based proof of personhood notion page: https://www.notion.so/EXT-Proof-of-Concept-for-Public-Social-Graph-Sybil-and-Incentives-analysis-af7af3271dc34094b8505410f6504b70?pvs=4.
 
